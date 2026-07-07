@@ -5,7 +5,7 @@ import {
   Pencil, Trash2, Save, ChevronLeft, ChevronRight,
   Bold, Italic, Underline, Square, Circle, Minus,
   ZoomIn, ZoomOut, CheckCheck, Type, Highlighter,
-  MousePointer2,
+  MousePointer2, Undo2, Redo2,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -472,8 +472,47 @@ export default function EditPage() {
   const scale = ZOOM_STEPS[zoomIdx];
   const [fmt, setFmt] = useState({ fontSize: 14, color: "#000000", bold: false, italic: false, underline: false });
 
+  // ── Undo / Redo history ───────────────────────────────────────────────────
+  const undoStack = useRef<Annotation[][]>([]);
+  const redoStack = useRef<Annotation[][]>([]);
+  // Reactive counters so disabled state on buttons updates correctly
+  const [undoCount, setUndoCount] = useState(0);
+  const [redoCount, setRedoCount] = useState(0);
+
+  /** Call this instead of setAnnotations whenever a user action should be undoable */
+  const pushHistory = useCallback((prev: Annotation[], next: Annotation[]) => {
+    undoStack.current.push(prev);
+    // Cap stack at 100 entries
+    if (undoStack.current.length > 100) undoStack.current.shift();
+    redoStack.current = []; // clear redo on new action
+    setAnnotations(next);
+    setUndoCount(undoStack.current.length);
+    setRedoCount(0);
+  }, []);
+
+  const undo = useCallback(() => {
+    if (undoStack.current.length === 0) return;
+    const prev = undoStack.current.pop()!;
+    redoStack.current.push(annotations);
+    setAnnotations(prev);
+    setSelectedId(null);
+    setUndoCount(undoStack.current.length);
+    setRedoCount(redoStack.current.length);
+  }, [annotations]);
+
+  const redo = useCallback(() => {
+    if (redoStack.current.length === 0) return;
+    const next = redoStack.current.pop()!;
+    undoStack.current.push(annotations);
+    setAnnotations(next);
+    setSelectedId(null);
+    setUndoCount(undoStack.current.length);
+    setRedoCount(redoStack.current.length);
+  }, [annotations]);
+
   const loadFile = useCallback(async (f: File) => {
     setFile(f); setSaveOk(false); setAnnotations([]);
+    undoStack.current = []; redoStack.current = [];
     const ab = await f.arrayBuffer();
     setFileAB(ab);
     const pdf = await pdfjsLib.getDocument({ data: copyAB(ab) }).promise;
@@ -494,6 +533,19 @@ export default function EditPage() {
     const h = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const k = e.key.toLowerCase();
+
+      // Undo: Ctrl+Z
+      if ((e.ctrlKey || e.metaKey) && k === "z" && !e.shiftKey) {
+        e.preventDefault(); undo(); return;
+      }
+      // Redo: Ctrl+Y or Ctrl+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && (k === "y" || (k === "z" && e.shiftKey))) {
+        e.preventDefault(); redo(); return;
+      }
+
+      // Don't fire single-key shortcuts when Ctrl/Meta is held
+      if (e.ctrlKey || e.metaKey) return;
+
       if (k === "v") setTool("select");
       else if (k === "t") setTool("text");
       else if (k === "h") setTool("highlight");
@@ -502,7 +554,13 @@ export default function EditPage() {
       else if (k === "o") setTool("circle");
       else if (k === "l") setTool("line");
       else if ((k === "delete" || k === "backspace") && selectedId) {
-        setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null);
+        setAnnotations(prev => {
+          const next = prev.filter(x => x.id !== selectedId);
+          undoStack.current.push(prev);
+          redoStack.current = [];
+          return next;
+        });
+        setSelectedId(null);
       }
       else if (k === "+" || k === "=") setZoomIdx(i => Math.min(i + 1, ZOOM_STEPS.length - 1));
       else if (k === "-") setZoomIdx(i => Math.max(i - 1, 0));
@@ -512,7 +570,7 @@ export default function EditPage() {
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [selectedId, totalPages]);
+  }, [selectedId, totalPages, undo, redo]);
 
   // Sync fmt when selecting text annotation
   useEffect(() => {
@@ -525,7 +583,14 @@ export default function EditPage() {
 
   const updateFmt = (key: string, value: any) => {
     setFmt(p => ({ ...p, [key]: value }));
-    if (selectedId) setAnnotations(prev => prev.map(a => a.id === selectedId && a.type === "text" ? { ...a, [key]: value } : a));
+    if (selectedId) {
+      setAnnotations(prev => {
+        const next = prev.map(a => a.id === selectedId && a.type === "text" ? { ...a, [key]: value } : a);
+        undoStack.current.push(prev);
+        redoStack.current = [];
+        return next;
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -661,6 +726,26 @@ export default function EditPage() {
           </button>
         )}
 
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
+          <button
+            onClick={undo}
+            disabled={undoStack.current.length === 0}
+            title="Undo (Ctrl+Z)"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={redo}
+            disabled={redoStack.current.length === 0}
+            title="Redo (Ctrl+Y)"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <div className="flex-1" />
 
         {/* Zoom */}
@@ -714,7 +799,8 @@ export default function EditPage() {
           style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
           <div className="shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
             <EditorCanvas arrayBuffer={fileAB} pageNumber={page} tool={tool}
-              annotations={annotations} onAnnotationsChange={setAnnotations}
+              annotations={annotations}
+              onAnnotationsChange={(next) => pushHistory(annotations, next)}
               selectedId={selectedId} onSelect={setSelectedId}
               scale={scale} fmt={fmt} />
           </div>
