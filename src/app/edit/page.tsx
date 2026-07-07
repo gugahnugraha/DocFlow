@@ -34,6 +34,9 @@ interface Annotation {
   fill?: boolean;
   fillColor?: string;
   isExtracted?: boolean;
+  // Set when an extracted annotation is edited — preserves original position for whiteout
+  wasExtracted?: boolean;
+  origX?: number; origY?: number; origW?: number; origH?: number;
 }
 
 /* ─── Sidebar thumbnail ────────────────────────────────────────────────────── */
@@ -130,6 +133,7 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
   /* redraw annotations */
   useEffect(() => {
     const c = drawCvs.current;
+    const pdfC = pdfCvs.current;
     if (!c || dims.w === 0) return;
     c.width = dims.w; c.height = dims.h;
     const ctx = c.getContext("2d")!;
@@ -142,17 +146,28 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
       ctx.lineCap = "round"; ctx.lineJoin = "round";
 
       if (ann.type === "text" && ann.content) {
-        const weight = ann.bold ? "bold " : "";
-        const style  = ann.italic ? "italic " : "";
-        ctx.font = `${weight}${style}${ann.fontSize || 16}px Inter, Arial, sans-serif`;
-        ctx.fillStyle = ann.color;
-        ctx.globalAlpha = ann.isExtracted ? 0.75 : 1.0;
-        ctx.fillText(ann.content, ann.x, ann.y);
-        if (ann.underline) {
-          const tw = ctx.measureText(ann.content).width;
-          ctx.beginPath(); ctx.moveTo(ann.x, ann.y + 2); ctx.lineTo(ann.x + tw, ann.y + 2); ctx.stroke();
+        if (ann.isExtracted) {
+          // Original text lives in pdfjs layer — don't redraw, skip
+        } else {
+          // Edited or newly-added text: cover original with white first, then draw new text
+          // (only cover if this was originally extracted — wasExtracted flag)
+          if (ann.wasExtracted && ann.origX !== undefined && ann.origY !== undefined && ann.origW && ann.origH && pdfC) {
+            // Erase the original pdfjs-rendered text by painting white over it
+            const pdfCtx = pdfC.getContext("2d")!;
+            const pad = 3;
+            pdfCtx.fillStyle = "#ffffff";
+            pdfCtx.fillRect(ann.origX - pad, ann.origY - ann.origH - pad, ann.origW + pad * 2, ann.origH * 1.5 + pad * 2);
+          }
+          const weight = ann.bold ? "bold " : "";
+          const style  = ann.italic ? "italic " : "";
+          ctx.font = `${weight}${style}${ann.fontSize || 14}px Inter, Arial, sans-serif`;
+          ctx.fillStyle = ann.color;
+          ctx.fillText(ann.content, ann.x, ann.y);
+          if (ann.underline) {
+            const tw = ctx.measureText(ann.content).width;
+            ctx.beginPath(); ctx.moveTo(ann.x, ann.y + 2); ctx.lineTo(ann.x + tw, ann.y + 2); ctx.stroke();
+          }
         }
-        ctx.globalAlpha = 1.0;
       } else if (ann.type === "highlight" && ann.width && ann.height) {
         ctx.globalAlpha = 0.35; ctx.fillRect(ann.x, ann.y, ann.width, ann.height); ctx.globalAlpha = 1;
       } else if (ann.type === "draw" && ann.points?.length) {
@@ -172,13 +187,23 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
       /* selection ring */
       if (ann.id === selectedId) {
         ctx.strokeStyle = "#e64809"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-        const pad = 5;
-        if (ann.width && ann.height) {
-          ctx.strokeRect(ann.x - pad, ann.y - pad, ann.width + pad * 2, ann.height + pad * 2);
+        const pad = 4;
+        if (ann.type === "text" && ann.isExtracted) {
+          // Extracted: coords at scale 1.0 — multiply by render scale
+          const fSize = (ann.fontSize || 12) * scale;
+          const tWidth = Math.max((ann.width || 0) * scale, fSize * 2);
+          const sx = ann.x * scale;
+          const sy = ann.y * scale;
+          ctx.fillStyle = "rgba(230,72,9,0.06)";
+          ctx.fillRect(sx - pad, sy - fSize - pad, tWidth + pad * 2, fSize * 1.5 + pad * 2);
+          ctx.strokeRect(sx - pad, sy - fSize - pad, tWidth + pad * 2, fSize * 1.5 + pad * 2);
         } else if (ann.type === "text" && ann.content) {
-          ctx.font = `${ann.fontSize || 16}px Inter, Arial, sans-serif`;
+          const fSize = ann.fontSize || 14;
+          ctx.font = `${fSize}px Inter, Arial, sans-serif`;
           const tw = ctx.measureText(ann.content).width;
-          ctx.strokeRect(ann.x - pad, ann.y - (ann.fontSize || 16) - pad, tw + pad * 2, (ann.fontSize || 16) + pad * 2);
+          ctx.strokeRect(ann.x - pad, ann.y - fSize - pad, tw + pad * 2, fSize * 1.4 + pad * 2);
+        } else if (ann.width && ann.height) {
+          ctx.strokeRect(ann.x - pad, ann.y - pad, ann.width + pad * 2, ann.height + pad * 2);
         }
         ctx.setLineDash([]);
       }
@@ -193,7 +218,7 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
       else if (tool === "line") { ctx.beginPath(); ctx.moveTo(shapeStart.x, shapeStart.y); ctx.lineTo(shapeEnd.x, shapeEnd.y); ctx.stroke(); }
       ctx.setLineDash([]);
     }
-  }, [annotations, pageNumber, dims, selectedId, shapeStart, shapeEnd, tool]);
+  }, [annotations, pageNumber, dims, selectedId, shapeStart, shapeEnd, tool, scale]);
 
   /* mouse → canvas pixel coords */
   const mouse = (e: React.MouseEvent): { cx: number; cy: number; dx: number; dy: number } => {
@@ -217,9 +242,25 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
   const commitText = () => {
     if (textVal.trim()) {
       if (textAnnId) {
-        onAnnotationsChange(annotations.map(a =>
-          a.id === textAnnId ? { ...a, content: textVal, isExtracted: false } : a
-        ));
+        const orig = annotations.find(a => a.id === textAnnId);
+        const wasExt = orig?.isExtracted === true;
+        onAnnotationsChange(annotations.map(a => {
+          if (a.id !== textAnnId) return a;
+          return {
+            ...a,
+            content: textVal,
+            isExtracted: false,
+            wasExtracted: wasExt || a.wasExtracted,
+            // Preserve original position for whiteout (scale-1.0 coords → canvas coords)
+            origX: wasExt ? a.x * scale : a.origX,
+            origY: wasExt ? a.y * scale : a.origY,
+            origW: wasExt ? (a.width || 0) * scale : a.origW,
+            origH: wasExt ? (a.fontSize || 12) * scale : a.origH,
+            // Move x/y to canvas-scale coords so text renders correctly
+            x: wasExt ? a.x * scale : a.x,
+            y: wasExt ? a.y * scale : a.y,
+          };
+        }));
       } else {
         const ann: Annotation = {
           id: Date.now().toString(), type: "text", page: pageNumber,
@@ -248,16 +289,27 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
         const a = annotations[i];
         if (a.page !== pageNumber) continue;
         let hit = false;
-        if (a.width && a.height) {
-          hit = cx >= a.x - 8 && cx <= a.x + a.width + 8 && cy >= a.y - 8 && cy <= a.y + a.height + 8;
+        if (a.type === "text" && a.isExtracted) {
+          // Extracted coords stored at scale 1.0 — compare to canvas pixels by scaling
+          const ax = a.x * scale;
+          const ay = a.y * scale;
+          const aw = Math.max((a.width || 0) * scale, (a.fontSize || 12) * scale * 2);
+          const ah = (a.fontSize || 12) * scale * 1.5;
+          hit = cx >= ax - 4 && cx <= ax + aw + 4 && cy >= ay - ah - 4 && cy <= ay + 4;
         } else if (a.type === "text" && a.content) {
-          const approxW = (a.content.length * (a.fontSize || 12) * 0.6);
-          hit = cx >= a.x - 8 && cx <= a.x + approxW + 8 && cy >= a.y - (a.fontSize || 16) - 8 && cy <= a.y + 8;
+          const approxW = a.content.length * (a.fontSize || 12) * 0.6;
+          const fh = a.fontSize || 14;
+          hit = cx >= a.x - 6 && cx <= a.x + approxW + 6 && cy >= a.y - fh - 6 && cy <= a.y + 6;
+        } else if (a.width && a.height) {
+          hit = cx >= a.x - 8 && cx <= a.x + a.width + 8 && cy >= a.y - 8 && cy <= a.y + a.height + 8;
         }
         if (hit) {
           onSelect(a.id);
           if (a.type === "text") {
-            openTextEdit(a.id, a.content || "", a.x / scaleX, a.y / scaleY, a.x, a.y);
+            // For textarea DOM position: use canvas display coords
+            const domX = a.isExtracted ? a.x * scale / scaleX : a.x / scaleX;
+            const domY = a.isExtracted ? a.y * scale / scaleY : a.y / scaleY;
+            openTextEdit(a.id, a.content || "", domX, domY - (a.fontSize || 14), cx, cy);
           }
           found = true; break;
         }
