@@ -2,10 +2,10 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
-  Upload, Loader2, MousePointer2, Type, Highlighter,
   Pencil, Trash2, Save, ChevronLeft, ChevronRight,
   Bold, Italic, Underline, Square, Circle, Minus,
-  ZoomIn, ZoomOut, RotateCcw, Maximize2, CheckCheck,
+  ZoomIn, ZoomOut, CheckCheck, Type, Highlighter,
+  MousePointer2,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -16,11 +16,7 @@ import Button from "@/components/Button";
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-const copyAB = (b: ArrayBuffer) => {
-  const c = new ArrayBuffer(b.byteLength);
-  new Uint8Array(c).set(new Uint8Array(b));
-  return c;
-};
+const copyAB = (b: ArrayBuffer) => b.slice(0);
 
 type Tool = "select" | "text" | "highlight" | "draw" | "rectangle" | "circle" | "line";
 
@@ -37,12 +33,13 @@ interface Annotation {
   points?: { x: number; y: number }[];
   fill?: boolean;
   fillColor?: string;
+  isExtracted?: boolean;
 }
 
-/* ─── Thumbnail sidebar item ─────────────────────────────────────────────── */
-function PageThumb({
-  arrayBuffer, pageNumber, selected, onClick,
-}: { arrayBuffer: ArrayBuffer | null; pageNumber: number; selected: boolean; onClick: () => void }) {
+/* ─── Sidebar thumbnail ────────────────────────────────────────────────────── */
+function PageThumb({ arrayBuffer, pageNumber, selected, onClick }: {
+  arrayBuffer: ArrayBuffer | null; pageNumber: number; selected: boolean; onClick: () => void;
+}) {
   const cvs = useRef<HTMLCanvasElement>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +51,6 @@ function PageThumb({
         const pdf = await pdfjsLib.getDocument({ data: copyAB(arrayBuffer) }).promise;
         if (!alive) { pdf.destroy(); return; }
         const page = await pdf.getPage(pageNumber);
-        if (!alive) { pdf.destroy(); return; }
         const vp = page.getViewport({ scale: 0.28 });
         const c = cvs.current!;
         c.width = vp.width; c.height = vp.height;
@@ -67,32 +63,23 @@ function PageThumb({
   }, [arrayBuffer, pageNumber]);
 
   return (
-    <button
-      onClick={onClick}
+    <button onClick={onClick}
       className={`group w-full text-left rounded-xl overflow-hidden border-2 transition-all duration-150 ${
-        selected
-          ? "border-brand-500 shadow-[0_0_0_3px_rgba(230,72,9,.15)]"
-          : "border-transparent hover:border-[var(--border)]"
-      }`}
-    >
+        selected ? "border-brand-500 shadow-[0_0_0_3px_rgba(230,72,9,.15)]" : "border-transparent hover:border-[var(--border)]"
+      }`}>
       <div className="bg-slate-100 flex items-center justify-center min-h-[80px] relative">
         {loading && <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />}
         <canvas ref={cvs} className="w-full h-auto block" style={{ display: loading ? "none" : "block" }} />
       </div>
       <div className={`text-center py-1 text-[11px] font-semibold transition-colors ${
         selected ? "text-brand-600 bg-brand-50" : "text-[var(--text-subtle)] bg-white group-hover:bg-[var(--bg)]"
-      }`}>
-        {pageNumber}
-      </div>
+      }`}>{pageNumber}</div>
     </button>
   );
 }
 
-/* ─── Canvas editor ──────────────────────────────────────────────────────── */
-function EditorCanvas({
-  arrayBuffer, pageNumber, tool, annotations, onAnnotationsChange,
-  selectedId, onSelect, scale, fmt,
-}: {
+/* ─── Editor Canvas ────────────────────────────────────────────────────────── */
+function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotationsChange, selectedId, onSelect, scale, fmt }: {
   arrayBuffer: ArrayBuffer | null; pageNumber: number; tool: Tool;
   annotations: Annotation[]; onAnnotationsChange: (a: Annotation[]) => void;
   selectedId: string | null; onSelect: (id: string | null) => void;
@@ -101,29 +88,33 @@ function EditorCanvas({
 }) {
   const pdfCvs  = useRef<HTMLCanvasElement>(null);
   const drawCvs = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const renderTask = useRef<any>(null);
 
-  const [dims, setDims]           = useState({ w: 0, h: 0 });
-  const [drawing, setDrawing]     = useState(false);
-  const [pts, setPts]             = useState<{ x: number; y: number }[]>([]);
+  const [dims, setDims]             = useState({ w: 0, h: 0 });
+  const [drawing, setDrawing]       = useState(false);
+  const [pts, setPts]               = useState<{ x: number; y: number }[]>([]);
   const [shapeStart, setShapeStart] = useState<{ x: number; y: number } | null>(null);
-  const [shapeEnd,   setShapeEnd]   = useState<{ x: number; y: number } | null>(null);
-  const [textEdit,  setTextEdit]  = useState(false);
-  const [textAnnId, setTextAnnId] = useState<string | null>(null);
-  const [textVal,   setTextVal]   = useState("");
-  const [textPos,   setTextPos]   = useState({ x: 0, y: 0 });
+  const [shapeEnd, setShapeEnd]     = useState<{ x: number; y: number } | null>(null);
+  const [textEdit, setTextEdit]     = useState(false);
+  const [textAnnId, setTextAnnId]   = useState<string | null>(null);
+  const [textVal, setTextVal]       = useState("");
+  // DOM pixel position for the textarea overlay
+  const [textDomPos, setTextDomPos] = useState({ x: 0, y: 0 });
+  // Canvas pixel position for PDF coordinate storage
+  const [textCanvasPos, setTextCanvasPos] = useState({ x: 0, y: 0 });
 
-  /* render PDF layer */
+  /* render PDF */
   useEffect(() => {
     if (!arrayBuffer || !pdfCvs.current) return;
     let alive = true;
     (async () => {
       try {
+        renderTask.current?.cancel();
         const pdf = await pdfjsLib.getDocument({ data: copyAB(arrayBuffer) }).promise;
         if (!alive) { pdf.destroy(); return; }
         const page = await pdf.getPage(pageNumber);
-        if (!alive) { pdf.destroy(); return; }
         const vp = page.getViewport({ scale });
         const c = pdfCvs.current!;
         c.width = vp.width; c.height = vp.height;
@@ -136,7 +127,7 @@ function EditorCanvas({
     return () => { alive = false; renderTask.current?.cancel(); };
   }, [arrayBuffer, pageNumber, scale]);
 
-  /* redraw annotation layer */
+  /* redraw annotations */
   useEffect(() => {
     const c = drawCvs.current;
     if (!c || dims.w === 0) return;
@@ -144,30 +135,28 @@ function EditorCanvas({
     const ctx = c.getContext("2d")!;
     ctx.clearRect(0, 0, dims.w, dims.h);
 
-    const pageAnns = annotations.filter(a => a.page === pageNumber);
-    pageAnns.forEach(ann => {
+    annotations.filter(a => a.page === pageNumber).forEach(ann => {
       ctx.strokeStyle = ann.color;
-      ctx.fillStyle = ann.fillColor || ann.color;
-      ctx.lineWidth = 2.5;
+      ctx.fillStyle   = ann.fillColor || ann.color;
+      ctx.lineWidth   = 2.5;
       ctx.lineCap = "round"; ctx.lineJoin = "round";
 
       if (ann.type === "text" && ann.content) {
-        const parts = [ann.bold ? "bold" : "", ann.italic ? "italic" : ""].filter(Boolean).join(" ");
-        ctx.font = `${parts} ${ann.fontSize || 16}px Inter, sans-serif`;
+        const weight = ann.bold ? "bold " : "";
+        const style  = ann.italic ? "italic " : "";
+        ctx.font = `${weight}${style}${ann.fontSize || 16}px Inter, Arial, sans-serif`;
         ctx.fillStyle = ann.color;
+        ctx.globalAlpha = ann.isExtracted ? 0.75 : 1.0;
         ctx.fillText(ann.content, ann.x, ann.y);
         if (ann.underline) {
           const tw = ctx.measureText(ann.content).width;
-          ctx.beginPath(); ctx.moveTo(ann.x, ann.y + 3); ctx.lineTo(ann.x + tw, ann.y + 3); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(ann.x, ann.y + 2); ctx.lineTo(ann.x + tw, ann.y + 2); ctx.stroke();
         }
+        ctx.globalAlpha = 1.0;
       } else if (ann.type === "highlight" && ann.width && ann.height) {
-        ctx.globalAlpha = 0.35;
-        ctx.fillRect(ann.x, ann.y, ann.width, ann.height);
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 0.35; ctx.fillRect(ann.x, ann.y, ann.width, ann.height); ctx.globalAlpha = 1;
       } else if (ann.type === "draw" && ann.points?.length) {
-        ctx.beginPath();
-        ann.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-        ctx.stroke();
+        ctx.beginPath(); ann.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
       } else if (ann.type === "rectangle" && ann.width && ann.height) {
         if (ann.fill) { ctx.globalAlpha = 0.3; ctx.fillRect(ann.x, ann.y, ann.width, ann.height); ctx.globalAlpha = 1; }
         ctx.strokeRect(ann.x, ann.y, ann.width, ann.height);
@@ -183,11 +172,11 @@ function EditorCanvas({
       /* selection ring */
       if (ann.id === selectedId) {
         ctx.strokeStyle = "#e64809"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-        const pad = 6;
+        const pad = 5;
         if (ann.width && ann.height) {
           ctx.strokeRect(ann.x - pad, ann.y - pad, ann.width + pad * 2, ann.height + pad * 2);
         } else if (ann.type === "text" && ann.content) {
-          ctx.font = `${ann.fontSize || 16}px Inter, sans-serif`;
+          ctx.font = `${ann.fontSize || 16}px Inter, Arial, sans-serif`;
           const tw = ctx.measureText(ann.content).width;
           ctx.strokeRect(ann.x - pad, ann.y - (ann.fontSize || 16) - pad, tw + pad * 2, (ann.fontSize || 16) + pad * 2);
         }
@@ -200,33 +189,41 @@ function EditorCanvas({
       ctx.strokeStyle = "#e64809"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
       const w = shapeEnd.x - shapeStart.x, h = shapeEnd.y - shapeStart.y;
       if (tool === "rectangle") ctx.strokeRect(shapeStart.x, shapeStart.y, w, h);
-      else if (tool === "circle") {
-        ctx.beginPath(); ctx.ellipse(shapeStart.x + w/2, shapeStart.y + h/2, Math.abs(w/2), Math.abs(h/2), 0, 0, 2*Math.PI); ctx.stroke();
-      } else if (tool === "line") {
-        ctx.beginPath(); ctx.moveTo(shapeStart.x, shapeStart.y); ctx.lineTo(shapeEnd.x, shapeEnd.y); ctx.stroke();
-      }
+      else if (tool === "circle") { ctx.beginPath(); ctx.ellipse(shapeStart.x + w/2, shapeStart.y + h/2, Math.abs(w/2), Math.abs(h/2), 0, 0, 2*Math.PI); ctx.stroke(); }
+      else if (tool === "line") { ctx.beginPath(); ctx.moveTo(shapeStart.x, shapeStart.y); ctx.lineTo(shapeEnd.x, shapeEnd.y); ctx.stroke(); }
       ctx.setLineDash([]);
     }
   }, [annotations, pageNumber, dims, selectedId, shapeStart, shapeEnd, tool]);
 
-  const mouse = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  /* mouse → canvas pixel coords */
+  const mouse = (e: React.MouseEvent): { cx: number; cy: number; dx: number; dy: number } => {
     const c = drawCvs.current!;
-    const r = c.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * (c.width / r.width), y: (e.clientY - r.top) * (c.height / r.height) };
+    const rect = c.getBoundingClientRect();
+    const scaleX = c.width / rect.width;
+    const scaleY = c.height / rect.height;
+    const dx = e.clientX - rect.left;
+    const dy = e.clientY - rect.top;
+    return { cx: dx * scaleX, cy: dy * scaleY, dx, dy };
   };
 
-  const startText = (id: string | null, txt: string, x: number, y: number) => {
-    setTextAnnId(id); setTextVal(txt); setTextPos({ x, y }); setTextEdit(true);
-    setTimeout(() => textRef.current?.focus(), 0);
+  const openTextEdit = (id: string | null, txt: string, dx: number, dy: number, cx: number, cy: number) => {
+    setTextAnnId(id); setTextVal(txt);
+    setTextDomPos({ x: dx, y: dy });
+    setTextCanvasPos({ x: cx, y: cy });
+    setTextEdit(true);
+    setTimeout(() => { textRef.current?.focus(); textRef.current?.select(); }, 10);
   };
-  const finishText = () => {
+
+  const commitText = () => {
     if (textVal.trim()) {
       if (textAnnId) {
-        onAnnotationsChange(annotations.map(a => a.id === textAnnId ? { ...a, content: textVal } : a));
+        onAnnotationsChange(annotations.map(a =>
+          a.id === textAnnId ? { ...a, content: textVal, isExtracted: false } : a
+        ));
       } else {
         const ann: Annotation = {
           id: Date.now().toString(), type: "text", page: pageNumber,
-          x: textPos.x, y: textPos.y, width: 200, height: 30,
+          x: textCanvasPos.x, y: textCanvasPos.y + (fmt.fontSize * 0.85),
           content: textVal, color: fmt.color, fontSize: fmt.fontSize,
           bold: fmt.bold, italic: fmt.italic, underline: fmt.underline,
         };
@@ -238,82 +235,122 @@ function EditorCanvas({
   };
 
   const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (textEdit) return;
-    const pos = mouse(e);
+    if (textEdit) { commitText(); return; }
+    const { cx, cy, dx, dy } = mouse(e);
+    const c = drawCvs.current!;
+    const rect = c.getBoundingClientRect();
+    const scaleX = c.width / rect.width;
+    const scaleY = c.height / rect.height;
+
     if (tool === "select") {
       let found = false;
       for (let i = annotations.length - 1; i >= 0; i--) {
         const a = annotations[i];
         if (a.page !== pageNumber) continue;
-        const hit = (a.width && a.height)
-          ? pos.x >= a.x - 8 && pos.x <= a.x + a.width + 8 && pos.y >= a.y - 8 && pos.y <= a.y + a.height + 8
-          : pos.x >= a.x - 12 && pos.x <= a.x + 100 && pos.y >= a.y - 20 && pos.y <= a.y + 8;
+        let hit = false;
+        if (a.width && a.height) {
+          hit = cx >= a.x - 8 && cx <= a.x + a.width + 8 && cy >= a.y - 8 && cy <= a.y + a.height + 8;
+        } else if (a.type === "text" && a.content) {
+          const approxW = (a.content.length * (a.fontSize || 12) * 0.6);
+          hit = cx >= a.x - 8 && cx <= a.x + approxW + 8 && cy >= a.y - (a.fontSize || 16) - 8 && cy <= a.y + 8;
+        }
         if (hit) {
           onSelect(a.id);
-          if (a.type === "text") startText(a.id, a.content || "", a.x, a.y);
+          if (a.type === "text") {
+            openTextEdit(a.id, a.content || "", a.x / scaleX, a.y / scaleY, a.x, a.y);
+          }
           found = true; break;
         }
       }
-      if (!found) { onSelect(null); setTextEdit(false); }
-    } else if (tool === "draw") { setDrawing(true); setPts([pos]); }
-    else if (["rectangle","circle","line"].includes(tool)) { setShapeStart(pos); setShapeEnd(pos); }
-    else if (tool === "text") { startText(null, "", pos.x, pos.y); }
-    else if (tool === "highlight") {
-      const ann: Annotation = { id: Date.now().toString(), type: "highlight", page: pageNumber, x: pos.x, y: pos.y - 20, width: 180, height: 24, color: fmt.color, fill: true };
+      if (!found) { onSelect(null); }
+    } else if (tool === "draw") {
+      setDrawing(true); setPts([{ x: cx, y: cy }]);
+    } else if (["rectangle","circle","line"].includes(tool)) {
+      setShapeStart({ x: cx, y: cy }); setShapeEnd({ x: cx, y: cy });
+    } else if (tool === "text") {
+      openTextEdit(null, "", dx, dy, cx, cy);
+    } else if (tool === "highlight") {
+      const ann: Annotation = { id: Date.now().toString(), type: "highlight", page: pageNumber, x: cx, y: cy - 18, width: 200, height: 20, color: fmt.color, fill: true };
       onAnnotationsChange([...annotations, ann]); onSelect(ann.id);
     }
   };
+
   const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (textEdit) return;
-    const pos = mouse(e);
-    if (drawing) setPts(p => [...p, pos]);
-    else if (shapeStart) setShapeEnd(pos);
+    const { cx, cy } = mouse(e);
+    if (drawing) setPts(p => [...p, { x: cx, y: cy }]);
+    else if (shapeStart) setShapeEnd({ x: cx, y: cy });
   };
+
   const onMouseUp = () => {
     if (drawing && pts.length > 1) {
       const ann: Annotation = { id: Date.now().toString(), type: "draw", page: pageNumber, x: pts[0].x, y: pts[0].y, color: fmt.color, points: pts };
       onAnnotationsChange([...annotations, ann]); onSelect(ann.id);
-    } else if (shapeStart && shapeEnd) {
-      const mk = (type: Annotation["type"]): Annotation => ({
-        id: Date.now().toString(), type, page: pageNumber,
-        x: Math.min(shapeStart.x, shapeEnd!.x), y: Math.min(shapeStart.y, shapeEnd!.y),
-        width: Math.abs(shapeEnd!.x - shapeStart.x), height: Math.abs(shapeEnd!.y - shapeStart.y),
-        color: fmt.color, fill: false,
-        points: tool === "line" ? [shapeStart, shapeEnd!] : undefined,
-      });
-      if (tool === "rectangle" || tool === "circle") { const a = mk(tool); onAnnotationsChange([...annotations, a]); onSelect(a.id); }
-      else if (tool === "line") {
-        const a: Annotation = { id: Date.now().toString(), type: "line", page: pageNumber, x: shapeStart.x, y: shapeStart.y, color: fmt.color, points: [shapeStart, shapeEnd!] };
-        onAnnotationsChange([...annotations, a]); onSelect(a.id);
+    } else if (shapeStart && shapeEnd && (shapeStart.x !== shapeEnd.x || shapeStart.y !== shapeEnd.y)) {
+      if (tool === "rectangle" || tool === "circle") {
+        const ann: Annotation = {
+          id: Date.now().toString(), type: tool, page: pageNumber,
+          x: Math.min(shapeStart.x, shapeEnd.x), y: Math.min(shapeStart.y, shapeEnd.y),
+          width: Math.abs(shapeEnd.x - shapeStart.x), height: Math.abs(shapeEnd.y - shapeStart.y),
+          color: fmt.color, fill: false,
+        };
+        onAnnotationsChange([...annotations, ann]); onSelect(ann.id);
+      } else if (tool === "line") {
+        const ann: Annotation = { id: Date.now().toString(), type: "line", page: pageNumber, x: shapeStart.x, y: shapeStart.y, color: fmt.color, points: [shapeStart, shapeEnd] };
+        onAnnotationsChange([...annotations, ann]); onSelect(ann.id);
       }
     }
     setDrawing(false); setPts([]); setShapeStart(null); setShapeEnd(null);
   };
 
-  const cursorClass = tool === "select" ? "cursor-default"
-    : tool === "text" ? "cursor-text"
-    : "cursor-crosshair";
+  const cursorClass = tool === "select" ? "cursor-default" : tool === "text" ? "cursor-text" : "cursor-crosshair";
 
   return (
-    <div className="relative inline-block select-none" style={{ lineHeight: 0 }}>
+    <div ref={containerRef} className="relative inline-block select-none overflow-hidden" style={{ lineHeight: 0 }}>
       <canvas ref={pdfCvs} className="absolute top-0 left-0 pointer-events-none block" />
       <canvas ref={drawCvs} className={`relative z-10 block ${cursorClass}`}
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp} />
+
       {textEdit && (
-        <textarea ref={textRef} value={textVal} onChange={e => setTextVal(e.target.value)}
-          onBlur={finishText}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finishText(); } else if (e.key === "Escape") { setTextEdit(false); } }}
+        <textarea
+          ref={textRef}
+          value={textVal}
+          onChange={e => {
+            setTextVal(e.target.value);
+            // auto-resize
+            if (textRef.current) { textRef.current.style.height = "auto"; textRef.current.style.height = textRef.current.scrollHeight + "px"; }
+          }}
+          onBlur={commitText}
+          onKeyDown={e => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitText(); }
+            else if (e.key === "Escape") { setTextEdit(false); setTextAnnId(null); setTextVal(""); }
+          }}
+          placeholder="Ketik teks…"
           style={{
-            position: "absolute", left: textPos.x, top: textPos.y - (fmt.fontSize),
-            fontSize: fmt.fontSize, color: fmt.color,
+            position: "absolute",
+            left: Math.max(0, textDomPos.x) + "px",
+            top: Math.max(0, textDomPos.y) + "px",
+            fontSize: `${fmt.fontSize}px`,
+            lineHeight: 1.3,
+            color: fmt.color,
             fontWeight: fmt.bold ? "bold" : "normal",
             fontStyle: fmt.italic ? "italic" : "normal",
             textDecoration: fmt.underline ? "underline" : "none",
-            fontFamily: "Inter, sans-serif",
-            minWidth: 120, maxWidth: 480,
-            border: "2px solid #e64809", borderRadius: 6,
-            background: "rgba(255,255,255,.95)", padding: "2px 6px",
-            resize: "none", outline: "none", zIndex: 100,
+            fontFamily: "Inter, Arial, sans-serif",
+            minWidth: "160px",
+            maxWidth: "420px",
+            width: "auto",
+            height: "auto",
+            minHeight: `${fmt.fontSize + 12}px`,
+            border: "2px solid #e64809",
+            borderRadius: "5px",
+            background: "rgba(255,255,255,0.97)",
+            padding: "3px 7px",
+            resize: "none",
+            outline: "none",
+            zIndex: 300,
+            overflow: "hidden",
+            boxShadow: "0 2px 12px rgba(230,72,9,0.18)",
           }}
           rows={1}
         />
@@ -322,94 +359,126 @@ function EditorCanvas({
   );
 }
 
-/* ─── Main page ──────────────────────────────────────────────────────────── */
+/* ─── Extract existing PDF text ───────────────────────────────────────────── */
+async function extractPageText(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number, scale: number): Promise<Annotation[]> {
+  const page = await pdf.getPage(pageNum);
+  const content = await page.getTextContent();
+  const vp = page.getViewport({ scale });
+  const result: Annotation[] = [];
+
+  for (const item of content.items as any[]) {
+    if (!item.str?.trim()) continue;
+    const tx = pdfjsLib.Util.transform(vp.transform, item.transform);
+    const x = tx[4];
+    const y = tx[5];
+    const fontSize = Math.max(Math.abs(tx[3]), 6);
+    const font = (item.fontName || "").toLowerCase();
+
+    result.push({
+      id: `ext-${pageNum}-${x.toFixed(0)}-${y.toFixed(0)}-${Math.random().toString(36).slice(2,6)}`,
+      type: "text", page: pageNum,
+      x, y,
+      width: Math.max((item.width || 0) * scale, fontSize * 0.5),
+      height: fontSize * 1.4,
+      content: item.str,
+      color: "#000000",
+      fontSize: Math.round(fontSize),
+      bold: font.includes("bold"),
+      italic: font.includes("italic") || font.includes("oblique"),
+      underline: false,
+      isExtracted: true,
+    });
+  }
+  return result;
+}
+
+/* ─── Constants ────────────────────────────────────────────────────────────── */
 const ZOOM_STEPS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
-const TOOLS_LIST: { id: Tool; label: string; shortcut: string; icon: React.ReactNode }[] = [
-  { id: "select",    label: "Seleksi",    shortcut: "V", icon: <MousePointer2 className="w-4 h-4" /> },
-  { id: "text",      label: "Teks",       shortcut: "T", icon: <Type className="w-4 h-4" /> },
-  { id: "highlight", label: "Highlight",  shortcut: "H", icon: <Highlighter className="w-4 h-4" /> },
-  { id: "draw",      label: "Gambar",     shortcut: "D", icon: <Pencil className="w-4 h-4" /> },
-  { id: "rectangle", label: "Persegi",    shortcut: "R", icon: <Square className="w-4 h-4" /> },
-  { id: "circle",    label: "Lingkaran",  shortcut: "O", icon: <Circle className="w-4 h-4" /> },
-  { id: "line",      label: "Garis",      shortcut: "L", icon: <Minus className="w-4 h-4" /> },
+const TOOLS_CFG: { id: Tool; label: string; key: string; icon: React.ReactNode }[] = [
+  { id: "select",    label: "Seleksi",   key: "V", icon: <MousePointer2 className="w-4 h-4" /> },
+  { id: "text",      label: "Teks",      key: "T", icon: <Type className="w-4 h-4" /> },
+  { id: "highlight", label: "Highlight", key: "H", icon: <Highlighter className="w-4 h-4" /> },
+  { id: "draw",      label: "Gambar",    key: "D", icon: <Pencil className="w-4 h-4" /> },
+  { id: "rectangle", label: "Persegi",   key: "R", icon: <Square className="w-4 h-4" /> },
+  { id: "circle",    label: "Lingkaran", key: "O", icon: <Circle className="w-4 h-4" /> },
+  { id: "line",      label: "Garis",     key: "L", icon: <Minus className="w-4 h-4" /> },
 ];
 
+/* ─── Main page ────────────────────────────────────────────────────────────── */
 export default function EditPage() {
-  const [file, setFile]             = useState<File | null>(null);
-  const [fileAB, setFileAB]         = useState<ArrayBuffer | null>(null);
-  const [page, setPage]             = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [tool, setTool]             = useState<Tool>("select");
+  const [file, setFile]               = useState<File | null>(null);
+  const [fileAB, setFileAB]           = useState<ArrayBuffer | null>(null);
+  const [page, setPage]               = useState(1);
+  const [totalPages, setTotalPages]   = useState(0);
+  const [tool, setTool]               = useState<Tool>("select");
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isSaving, setIsSaving]     = useState(false);
-  const [saveOk, setSaveOk]         = useState(false);
-  const [zoomIdx, setZoomIdx]       = useState(2); // 1.0 default
+  const [selectedId, setSelectedId]   = useState<string | null>(null);
+  const [saving, setSaving]           = useState(false);
+  const [saveOk, setSaveOk]           = useState(false);
+  const [zoomIdx, setZoomIdx]         = useState(2);
   const scale = ZOOM_STEPS[zoomIdx];
+  const [fmt, setFmt] = useState({ fontSize: 14, color: "#000000", bold: false, italic: false, underline: false });
 
-  const [fmt, setFmt] = useState({ fontSize: 16, color: "#000000", bold: false, italic: false, underline: false });
-
-  /* load file */
   const loadFile = useCallback(async (f: File) => {
-    setFile(f); setSaveOk(false);
+    setFile(f); setSaveOk(false); setAnnotations([]);
     const ab = await f.arrayBuffer();
     setFileAB(ab);
     const pdf = await pdfjsLib.getDocument({ data: copyAB(ab) }).promise;
     setTotalPages(pdf.numPages);
     setPage(1);
+    // Extract existing text from all pages at scale 1.0 (PDF coordinates)
+    const all: Annotation[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const pg = await extractPageText(pdf, i, 1.0);
+      all.push(...pg);
+    }
+    setAnnotations(all);
     pdf.destroy();
   }, []);
 
-  /* keyboard shortcuts */
+  // Keyboard shortcuts
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const h = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      const key = e.key.toLowerCase();
-      if (key === "v") setTool("select");
-      else if (key === "t") setTool("text");
-      else if (key === "h") setTool("highlight");
-      else if (key === "d") setTool("draw");
-      else if (key === "r") setTool("rectangle");
-      else if (key === "o") setTool("circle");
-      else if (key === "l") setTool("line");
-      else if (key === "delete" || key === "backspace") {
-        if (selectedId) {
-          setAnnotations(a => a.filter(x => x.id !== selectedId));
-          setSelectedId(null);
-        }
-      } else if (key === "+" || key === "=") setZoomIdx(i => Math.min(i + 1, ZOOM_STEPS.length - 1));
-      else if (key === "-") setZoomIdx(i => Math.max(i - 1, 0));
-      else if (key === "0") setZoomIdx(2);
-      else if (key === "arrowleft") setPage(p => Math.max(1, p - 1));
-      else if (key === "arrowright") setPage(p => Math.min(totalPages, p + 1));
+      const k = e.key.toLowerCase();
+      if (k === "v") setTool("select");
+      else if (k === "t") setTool("text");
+      else if (k === "h") setTool("highlight");
+      else if (k === "d") setTool("draw");
+      else if (k === "r") setTool("rectangle");
+      else if (k === "o") setTool("circle");
+      else if (k === "l") setTool("line");
+      else if ((k === "delete" || k === "backspace") && selectedId) {
+        setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null);
+      }
+      else if (k === "+" || k === "=") setZoomIdx(i => Math.min(i + 1, ZOOM_STEPS.length - 1));
+      else if (k === "-") setZoomIdx(i => Math.max(i - 1, 0));
+      else if (k === "0") setZoomIdx(2);
+      else if (k === "arrowleft") setPage(p => Math.max(1, p - 1));
+      else if (k === "arrowright") setPage(p => Math.min(totalPages, p + 1));
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [selectedId, totalPages]);
 
-  /* update fmt when selecting a text annotation */
+  // Sync fmt when selecting text annotation
   useEffect(() => {
     if (!selectedId) return;
     const ann = annotations.find(a => a.id === selectedId);
     if (ann?.type === "text") {
-      setFmt({ fontSize: ann.fontSize || 16, color: ann.color, bold: ann.bold || false, italic: ann.italic || false, underline: ann.underline || false });
+      setFmt({ fontSize: ann.fontSize || 14, color: ann.color, bold: ann.bold || false, italic: ann.italic || false, underline: ann.underline || false });
     }
   }, [selectedId, annotations]);
 
   const updateFmt = (key: string, value: any) => {
-    setFmt(prev => ({ ...prev, [key]: value }));
-    if (selectedId) {
-      setAnnotations(prev => prev.map(a =>
-        a.id === selectedId && a.type === "text" ? { ...a, [key]: value } : a
-      ));
-    }
+    setFmt(p => ({ ...p, [key]: value }));
+    if (selectedId) setAnnotations(prev => prev.map(a => a.id === selectedId && a.type === "text" ? { ...a, [key]: value } : a));
   };
 
-  /* save to PDF */
   const handleSave = async () => {
     if (!fileAB) return;
-    setIsSaving(true); setSaveOk(false);
+    setSaving(true); setSaveOk(false);
     try {
       const doc = await PDFDocument.load(fileAB);
       const pages = doc.getPages();
@@ -418,26 +487,26 @@ export default function EditPage() {
       for (let i = 0; i < pages.length; i++) {
         const pg = pages[i];
         const ph = pg.getHeight();
-        const anns = annotations.filter(a => a.page === i + 1);
+        const anns = annotations.filter(a => a.page === i + 1 && !a.isExtracted);
         for (const ann of anns) {
           const c = hexRgb(ann.color);
           if (ann.type === "text") {
-            pg.drawText(ann.content || "", { x: ann.x, y: ph - ann.y, size: ann.fontSize || 16, font, color: rgb(c.r,c.g,c.b) });
+            pg.drawText(ann.content || "", { x: ann.x, y: ph - ann.y, size: ann.fontSize || 14, font, color: rgb(c.r, c.g, c.b) });
           } else if (ann.type === "highlight") {
-            pg.drawRectangle({ x: ann.x, y: ph - ann.y - (ann.height||24), width: ann.width||180, height: ann.height||24, color: rgb(c.r,c.g,c.b), opacity: 0.35 });
+            pg.drawRectangle({ x: ann.x, y: ph - ann.y - (ann.height || 20), width: ann.width || 200, height: ann.height || 20, color: rgb(c.r, c.g, c.b), opacity: 0.35 });
           } else if (ann.type === "draw" && ann.points) {
             for (let j = 0; j < ann.points.length - 1; j++) {
-              pg.drawLine({ start: { x: ann.points[j].x, y: ph - ann.points[j].y }, end: { x: ann.points[j+1].x, y: ph - ann.points[j+1].y }, color: rgb(c.r,c.g,c.b), thickness: 2.5 });
+              pg.drawLine({ start: { x: ann.points[j].x, y: ph - ann.points[j].y }, end: { x: ann.points[j+1].x, y: ph - ann.points[j+1].y }, color: rgb(c.r, c.g, c.b), thickness: 2.5 });
             }
           } else if (ann.type === "rectangle" && ann.width && ann.height) {
-            if (ann.fill) pg.drawRectangle({ x: ann.x, y: ph - ann.y - ann.height, width: ann.width, height: ann.height, color: rgb(c.r,c.g,c.b), opacity: 0.3 });
-            pg.drawRectangle({ x: ann.x, y: ph - ann.y - ann.height, width: ann.width, height: ann.height, borderColor: rgb(c.r,c.g,c.b), borderWidth: 2 });
+            if (ann.fill) pg.drawRectangle({ x: ann.x, y: ph - ann.y - ann.height, width: ann.width, height: ann.height, color: rgb(c.r, c.g, c.b), opacity: 0.3 });
+            pg.drawRectangle({ x: ann.x, y: ph - ann.y - ann.height, width: ann.width, height: ann.height, borderColor: rgb(c.r, c.g, c.b), borderWidth: 2 });
           } else if (ann.type === "circle" && ann.width && ann.height) {
-            const cx = ann.x + ann.width/2, cy = ph - ann.y - ann.height/2;
-            if (ann.fill) pg.drawEllipse({ x: cx, y: cy, xSemiAxis: ann.width/2, ySemiAxis: ann.height/2, color: rgb(c.r,c.g,c.b), opacity: 0.3 });
-            pg.drawEllipse({ x: cx, y: cy, xSemiAxis: ann.width/2, ySemiAxis: ann.height/2, borderColor: rgb(c.r,c.g,c.b), borderWidth: 2 });
+            const cx = ann.x + ann.width / 2, cy = ph - ann.y - ann.height / 2;
+            if (ann.fill) pg.drawEllipse({ x: cx, y: cy, xSemiAxis: ann.width/2, ySemiAxis: ann.height/2, color: rgb(c.r, c.g, c.b), opacity: 0.3 });
+            pg.drawEllipse({ x: cx, y: cy, xSemiAxis: ann.width/2, ySemiAxis: ann.height/2, borderColor: rgb(c.r, c.g, c.b), borderWidth: 2 });
           } else if (ann.type === "line" && ann.points) {
-            pg.drawLine({ start: { x: ann.points[0].x, y: ph - ann.points[0].y }, end: { x: ann.points[1].x, y: ph - ann.points[1].y }, color: rgb(c.r,c.g,c.b), thickness: 2.5 });
+            pg.drawLine({ start: { x: ann.points[0].x, y: ph - ann.points[0].y }, end: { x: ann.points[1].x, y: ph - ann.points[1].y }, color: rgb(c.r, c.g, c.b), thickness: 2.5 });
           }
         }
       }
@@ -448,13 +517,13 @@ export default function EditPage() {
       URL.revokeObjectURL(url);
       setSaveOk(true); setTimeout(() => setSaveOk(false), 3000);
     } catch { alert("Gagal menyimpan file"); }
-    finally { setIsSaving(false); }
+    finally { setSaving(false); }
   };
 
   const selectedAnn = annotations.find(a => a.id === selectedId);
-  const isTxtTool   = tool === "text" || (selectedAnn?.type === "text");
+  const isTxtActive = tool === "text" || selectedAnn?.type === "text";
+  const userAnnCount = annotations.filter(a => !a.isExtracted).length;
 
-  /* ── JSX ── */
   if (!file) {
     return (
       <div className="min-h-screen" style={{ background: "var(--bg)" }}>
@@ -466,21 +535,16 @@ export default function EditPage() {
                 <Pencil className="w-8 h-8 text-brand-500" />
               </div>
               <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Edit PDF</h1>
-              <p className="text-[var(--text-muted)] text-sm">
-                Tambahkan teks, highlight, gambar, dan anotasi pada PDF Anda
-              </p>
+              <p className="text-sm text-[var(--text-muted)]">Tambah teks, highlight, bentuk, dan anotasi. Teks yang ada dapat diklik dan diedit.</p>
             </div>
-            <DropZone
-              onFiles={(files) => loadFile(files[0])}
-              accept="application/pdf"
-            />
-            <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <DropZone onFiles={f => loadFile(f[0])} accept="application/pdf" />
+            <div className="mt-5 grid grid-cols-4 gap-2">
               {[
                 { icon: <Type className="w-4 h-4" />, label: "Tambah Teks" },
                 { icon: <Highlighter className="w-4 h-4" />, label: "Highlight" },
                 { icon: <Pencil className="w-4 h-4" />, label: "Gambar Bebas" },
                 { icon: <Square className="w-4 h-4" />, label: "Bentuk" },
-              ].map((f) => (
+              ].map(f => (
                 <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
                   <span className="text-brand-500">{f.icon}</span>
                   <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
@@ -498,119 +562,87 @@ export default function EditPage() {
       <Header activePath="/edit" />
 
       {/* ── Toolbar ── */}
-      <div className="bg-white border-b border-[var(--border)] px-4 py-2 flex items-center gap-1 flex-wrap sticky top-[60px] z-40">
-
-        {/* Tool buttons */}
-        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 mr-2">
-          {TOOLS_LIST.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTool(t.id)}
-              title={`${t.label} (${t.shortcut})`}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-100 ${
-                tool === t.id
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white"
-              }`}
-            >
+      <div className="bg-white border-b border-[var(--border)] px-4 py-2 flex items-center gap-1 flex-wrap sticky top-[60px] z-40 shadow-sm">
+        {/* Tools */}
+        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 mr-1">
+          {TOOLS_CFG.map(t => (
+            <button key={t.id} onClick={() => setTool(t.id)} title={`${t.label} (${t.key})`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                tool === t.id ? "bg-brand-500 text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white"
+              }`}>
               {t.icon}
               <span className="hidden sm:inline">{t.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Separator */}
-        <span className="w-px h-6 bg-[var(--border)] mx-1" />
+        <span className="w-px h-6 bg-[var(--border)] mx-0.5" />
 
-        {/* Text format — only show when text tool/annotation is active */}
-        {isTxtTool && (
+        {/* Text formatting */}
+        {isTxtActive && (
           <>
-            <select
-              value={fmt.fontSize}
-              onChange={(e) => updateFmt("fontSize", parseInt(e.target.value))}
-              className="input w-16 py-1 text-xs"
-            >
-              {[8, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64].map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+            <select value={fmt.fontSize} onChange={e => updateFmt("fontSize", parseInt(e.target.value))}
+              className="input w-16 py-1 text-xs">
+              {[8,9,10,11,12,14,16,18,20,22,24,28,32,36,40,48,56,64,72].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-
-            <button onClick={() => updateFmt("bold", !fmt.bold)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-colors ${fmt.bold ? "bg-brand-100 text-brand-600" : "hover:bg-[var(--bg)] text-[var(--text-muted)]"}`}>
-              <Bold className="w-4 h-4" />
-            </button>
-            <button onClick={() => updateFmt("italic", !fmt.italic)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${fmt.italic ? "bg-brand-100 text-brand-600" : "hover:bg-[var(--bg)] text-[var(--text-muted)]"}`}>
-              <Italic className="w-4 h-4" />
-            </button>
-            <button onClick={() => updateFmt("underline", !fmt.underline)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${fmt.underline ? "bg-brand-100 text-brand-600" : "hover:bg-[var(--bg)] text-[var(--text-muted)]"}`}>
-              <Underline className="w-4 h-4" />
-            </button>
-
-            <div className="relative">
-              <input type="color" value={fmt.color} onChange={(e) => updateFmt("color", e.target.value)}
-                className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white" />
-            </div>
-
-            <span className="w-px h-6 bg-[var(--border)] mx-1" />
+            {[
+              { key: "bold",      icon: <Bold className="w-4 h-4" />,      val: fmt.bold },
+              { key: "italic",    icon: <Italic className="w-4 h-4" />,    val: fmt.italic },
+              { key: "underline", icon: <Underline className="w-4 h-4" />, val: fmt.underline },
+            ].map(f => (
+              <button key={f.key} onClick={() => updateFmt(f.key, !f.val)}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${f.val ? "bg-brand-100 text-brand-600" : "text-[var(--text-muted)] hover:bg-[var(--bg)]"}`}>
+                {f.icon}
+              </button>
+            ))}
+            <input type="color" value={fmt.color} onChange={e => updateFmt("color", e.target.value)}
+              className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white" title="Warna teks" />
+            <span className="w-px h-6 bg-[var(--border)] mx-0.5" />
           </>
         )}
 
-        {/* Delete selected */}
+        {/* Delete */}
         {selectedId && (
-          <button
-            onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-            title="Hapus (Delete)"
-          >
+          <button onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors" title="Hapus (Delete)">
             <Trash2 className="w-4 h-4" />
           </button>
         )}
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Zoom controls */}
-        <div className="flex items-center gap-1 bg-[var(--bg)] rounded-xl p-1">
+        {/* Zoom */}
+        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1">
           <button onClick={() => setZoomIdx(i => Math.max(i - 1, 0))} disabled={zoomIdx === 0}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-40 transition-colors">
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
           <button onClick={() => setZoomIdx(2)}
-            className="px-2 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] transition-colors min-w-[44px] text-center">
+            className="px-2 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:bg-white min-w-[44px] text-center">
             {Math.round(scale * 100)}%
           </button>
           <button onClick={() => setZoomIdx(i => Math.min(i + 1, ZOOM_STEPS.length - 1))} disabled={zoomIdx === ZOOM_STEPS.length - 1}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-40 transition-colors">
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Page nav */}
-        <div className="flex items-center gap-1 bg-[var(--bg)] rounded-xl p-1 ml-1">
+        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-xs font-semibold text-[var(--text-muted)] px-1 min-w-[52px] text-center">
-            {page} / {totalPages}
-          </span>
+          <span className="text-xs font-semibold text-[var(--text-muted)] px-1 min-w-[48px] text-center">{page} / {totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Save button */}
-        <Button
-          onClick={handleSave}
-          loading={isSaving}
-          size="sm"
+        <Button onClick={handleSave} loading={saving} size="sm" className="ml-2"
           icon={saveOk ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          variant={saveOk ? "outline" : "brand"}
-          className="ml-2"
-        >
+          variant={saveOk ? "outline" : "brand"}>
           {saveOk ? "Tersimpan!" : "Simpan"}
         </Button>
       </div>
@@ -618,110 +650,91 @@ export default function EditPage() {
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Page thumbnails */}
-        <div className="w-[140px] flex-shrink-0 bg-white border-r border-[var(--border)] overflow-y-auto p-2.5 space-y-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+        {/* Thumbnails */}
+        <div className="w-[136px] flex-shrink-0 bg-white border-r border-[var(--border)] overflow-y-auto p-2 space-y-2">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
             <PageThumb key={n} arrayBuffer={fileAB} pageNumber={n} selected={page === n} onClick={() => setPage(n)} />
           ))}
         </div>
 
-        {/* Canvas area */}
+        {/* Canvas */}
         <div className="flex-1 overflow-auto p-8 flex justify-center items-start"
-          style={{ background: "repeating-linear-gradient(45deg,#f0ece8 0px,#f0ece8 2px,var(--bg) 2px,var(--bg) 20px)" }}>
-          <div className="shadow-[var(--shadow-lg)] rounded-lg overflow-hidden">
-            <EditorCanvas
-              arrayBuffer={fileAB}
-              pageNumber={page}
-              tool={tool}
-              annotations={annotations}
-              onAnnotationsChange={setAnnotations}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              scale={scale}
-              fmt={fmt}
-            />
+          style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
+          <div className="shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
+            <EditorCanvas arrayBuffer={fileAB} pageNumber={page} tool={tool}
+              annotations={annotations} onAnnotationsChange={setAnnotations}
+              selectedId={selectedId} onSelect={setSelectedId}
+              scale={scale} fmt={fmt} />
           </div>
         </div>
 
-        {/* Properties sidebar */}
-        <div className="w-64 flex-shrink-0 bg-white border-l border-[var(--border)] flex flex-col overflow-y-auto">
+        {/* Properties */}
+        <div className="w-60 flex-shrink-0 bg-white border-l border-[var(--border)] flex flex-col overflow-y-auto">
           <div className="px-4 pt-4 pb-3 border-b border-[var(--border)]">
-            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wide">Properties</p>
+            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Properties</p>
           </div>
-
-          <div className="flex-1 p-4 space-y-5 overflow-y-auto">
-            {/* File info */}
+          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+            {/* File */}
             <div>
               <p className="label">File</p>
               <div className="card p-3">
                 <p className="text-xs font-semibold text-[var(--text)] truncate">{file.name}</p>
-                <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">{totalPages} halaman · {Math.round(file.size / 1024)} KB</p>
+                <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">{totalPages} hal · {Math.round(file.size / 1024)} KB</p>
               </div>
             </div>
-
-            {/* Annotation count */}
+            {/* Annotations */}
             <div>
               <p className="label">Anotasi</p>
-              <div className="card p-3">
-                <p className="text-xs text-[var(--text-muted)]">
-                  <span className="font-bold text-brand-500 text-sm">{annotations.length}</span> anotasi total
-                </p>
-                <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">
-                  {annotations.filter(a => a.page === page).length} di halaman ini
-                </p>
+              <div className="card p-3 space-y-1">
+                <p className="text-xs text-[var(--text-muted)]"><span className="font-bold text-brand-500 text-sm">{userAnnCount}</span> anotasi baru</p>
+                <p className="text-[11px] text-[var(--text-subtle)]">{annotations.filter(a => a.page === page && !a.isExtracted).length} di halaman ini</p>
+                <p className="text-[11px] text-[var(--text-subtle)]">{annotations.filter(a => a.isExtracted).length} teks asli terdeteksi</p>
               </div>
             </div>
-
-            {/* Selected annotation properties */}
+            {/* Selected */}
             {selectedAnn && (
               <div>
-                <p className="label">Pilihan</p>
-                <div className="space-y-3 card p-3">
+                <p className="label">Dipilih</p>
+                <div className="card p-3 space-y-3">
+                  {selectedAnn.isExtracted && (
+                    <p className="text-[11px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1">Teks asli PDF — klik untuk edit</p>
+                  )}
                   <div>
-                    <p className="text-[11px] text-[var(--text-subtle)] mb-1.5 font-medium">Warna</p>
+                    <p className="text-[11px] text-[var(--text-subtle)] mb-1">Warna</p>
                     <input type="color" value={selectedAnn.color}
-                      onChange={(e) => setAnnotations(prev => prev.map(a => a.id === selectedId ? { ...a, color: e.target.value } : a))}
+                      onChange={e => setAnnotations(p => p.map(a => a.id === selectedId ? { ...a, color: e.target.value, isExtracted: false } : a))}
                       className="w-full h-8 rounded-lg border border-[var(--border)] cursor-pointer" />
                   </div>
                   {["rectangle","circle","highlight"].includes(selectedAnn.type) && (
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={selectedAnn.fill || false}
-                        onChange={(e) => setAnnotations(prev => prev.map(a => a.id === selectedId ? { ...a, fill: e.target.checked } : a))}
+                        onChange={e => setAnnotations(p => p.map(a => a.id === selectedId ? { ...a, fill: e.target.checked } : a))}
                         className="w-4 h-4 accent-brand-500 rounded" />
                       <span className="text-xs font-medium text-[var(--text-muted)]">Isi bentuk</span>
                     </label>
                   )}
                   <button onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-xs font-semibold transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" /> Hapus Anotasi
+                    <Trash2 className="w-3.5 h-3.5" /> Hapus
                   </button>
                 </div>
               </div>
             )}
-
-            {/* Keyboard shortcuts */}
+            {/* Shortcuts */}
             <div>
-              <p className="label">Pintasan</p>
+              <p className="label">Pintasan Keyboard</p>
               <div className="space-y-1">
-                {[
-                  ["V", "Seleksi"], ["T", "Teks"], ["H", "Highlight"],
-                  ["D", "Gambar"], ["R", "Persegi"], ["O", "Lingkaran"],
-                  ["+/-", "Zoom"], ["← →", "Halaman"], ["Del", "Hapus"],
-                ].map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between py-1">
-                    <span className="text-[11px] text-[var(--text-muted)]">{label}</span>
-                    <kbd className="text-[10px] font-mono font-semibold bg-[var(--bg)] border border-[var(--border)] rounded px-1.5 py-0.5 text-[var(--text-subtle)]">
-                      {key}
-                    </kbd>
+                {[["V","Seleksi"],["T","Teks"],["H","Highlight"],["D","Gambar"],["R","Persegi"],["O","Lingkaran"],["+/-","Zoom"],["← →","Halaman"],["Del","Hapus"]].map(([k,l]) => (
+                  <div key={k} className="flex items-center justify-between py-0.5">
+                    <span className="text-[11px] text-[var(--text-muted)]">{l}</span>
+                    <kbd className="text-[10px] font-mono font-semibold bg-[var(--bg)] border border-[var(--border)] rounded px-1.5 py-0.5 text-[var(--text-subtle)]">{k}</kbd>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Footer save */}
           <div className="p-4 border-t border-[var(--border)]">
-            <Button onClick={handleSave} loading={isSaving} fullWidth size="md"
+            <Button onClick={handleSave} loading={saving} fullWidth size="md"
               icon={saveOk ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
               variant={saveOk ? "outline" : "brand"}>
               {saveOk ? "Tersimpan!" : "Simpan Perubahan"}
@@ -733,10 +746,7 @@ export default function EditPage() {
   );
 }
 
-/* ─── Helper ─────────────────────────────────────────────────────────────── */
 function hexRgb(hex: string) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return r
-    ? { r: parseInt(r[1], 16) / 255, g: parseInt(r[2], 16) / 255, b: parseInt(r[3], 16) / 255 }
-    : { r: 0, g: 0, b: 0 };
+  return r ? { r: parseInt(r[1],16)/255, g: parseInt(r[2],16)/255, b: parseInt(r[3],16)/255 } : { r:0,g:0,b:0 };
 }

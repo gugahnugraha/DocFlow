@@ -1,285 +1,155 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Upload, Loader2, ImageIcon, X, GripVertical, Plus } from "lucide-react";
+import { ImageIcon, X, GripVertical, Plus } from "lucide-react";
 import Header from "@/components/Header";
+import DropZone from "@/components/DropZone";
+import Button from "@/components/Button";
 
-interface ImageItem {
-  id: string;
-  file: File;
-  previewUrl: string;
-}
+interface ImageItem { id: string; file: File; previewUrl: string }
 
 export default function ImageToPdfPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [dragSourceId, setDragSourceId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-
-  // Settings
+  const [processing, setProcessing] = useState(false);
+  const [dragSrc, setDragSrc] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState("A4");
   const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait");
   const [margin, setMargin] = useState(20);
   const [fitMode, setFitMode] = useState<"contain" | "stretch" | "original">("contain");
 
   const addImages = useCallback((files: File[]) => {
-    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    const valid = files.filter(f => validTypes.includes(f.type));
-    const items: ImageItem[] = valid.map(f => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file: f,
-      previewUrl: URL.createObjectURL(f),
-    }));
-    setImages(prev => [...prev, ...items]);
+    const valid = files.filter(f => ["image/jpeg","image/jpg","image/png","image/webp"].includes(f.type));
+    setImages(prev => [...prev, ...valid.map(f => ({ id: crypto.randomUUID(), file: f, previewUrl: URL.createObjectURL(f) }))]);
   }, []);
 
-  const removeImage = (id: string) => {
-    setImages(prev => {
-      const item = prev.find(i => i.id === id);
-      if (item) URL.revokeObjectURL(item.previewUrl);
-      return prev.filter(i => i.id !== id);
-    });
+  const remove = (id: string) => {
+    setImages(prev => { const img = prev.find(i => i.id === id); if (img) URL.revokeObjectURL(img.previewUrl); return prev.filter(i => i.id !== id); });
   };
 
-  // Drag reorder
-  const handleDrop = (dropId: string) => {
-    if (!dragSourceId || dragSourceId === dropId) return;
-    setImages(prev => {
-      const next = [...prev];
-      const fromIdx = next.findIndex(i => i.id === dragSourceId);
-      const toIdx = next.findIndex(i => i.id === dropId);
-      const [moved] = next.splice(fromIdx, 1);
-      next.splice(toIdx, 0, moved);
-      return next;
-    });
-    setDragSourceId(null);
-    setDragOverId(null);
+  const onDrop = (dropId: string) => {
+    if (!dragSrc || dragSrc === dropId) return;
+    setImages(prev => { const next = [...prev]; const fi = next.findIndex(i => i.id === dragSrc); const ti = next.findIndex(i => i.id === dropId); const [m] = next.splice(fi, 1); next.splice(ti, 0, m); return next; });
+    setDragSrc(null); setDragOver(null);
   };
 
   const handleConvert = async () => {
-    if (images.length === 0) return;
-    setIsProcessing(true);
+    if (!images.length) return;
+    setProcessing(true);
     try {
-      const formData = new FormData();
-      images.forEach(img => formData.append("files", img.file));
-      formData.append("pageSize", pageSize);
-      formData.append("orientation", orientation);
-      formData.append("margin", margin.toString());
-      formData.append("fitMode", fitMode);
-
-      const res = await fetch("/api/image-to-pdf", { method: "POST", body: formData });
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || "Gagal");
-      }
-
+      const fd = new FormData();
+      images.forEach(img => fd.append("files", img.file));
+      fd.append("pageSize", pageSize); fd.append("orientation", orientation);
+      fd.append("margin", String(margin)); fd.append("fitMode", fitMode);
+      const res = await fetch("/api/image-to-pdf", { method: "POST", body: fd });
+      if (!res.ok) { const j = await res.json(); throw new Error(j.error); }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "images.pdf";
-      a.click();
+      const a = document.createElement("a"); a.href = url; a.download = "images.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch (err: any) {
-      alert(err.message || "Gagal memproses file");
-    } finally {
-      setIsProcessing(false);
-    }
+    } catch (err: any) { alert(err.message || "Gagal memproses file"); }
+    finally { setProcessing(false); }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-full mx-auto px-6 h-16 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 text-2xl font-bold">
-            <span className="text-black">Doc</span><span className="text-red-600">Flow</span>
-          </a>
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-slate-700 font-semibold hover:text-slate-900">Login</button>
-            <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-semibold transition-colors">Sign up</button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex min-h-[calc(100vh-4rem)]">
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+      <Header activePath="/image-to-pdf" />
+      <main className="flex min-h-[calc(100vh-60px)]">
         {images.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-10 shadow-sm max-w-md w-full text-center">
-              <div className="bg-orange-50 w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <ImageIcon className="w-10 h-10 text-orange-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-3">Gambar ke PDF</h2>
-              <p className="text-slate-500 mb-8">Konversi JPG, PNG ke PDF. Pilih beberapa gambar sekaligus.</p>
-              <label className="cursor-pointer">
-                <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple
-                  onChange={(e) => e.target.files && addImages(Array.from(e.target.files))} className="hidden" />
-                <div className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3">
-                  <Upload className="w-6 h-6" /> Pilih Gambar
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="w-full max-w-lg">
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 bg-brand-50">
+                  <ImageIcon className="w-7 h-7 text-brand-500" />
                 </div>
-              </label>
-              <p className="text-xs text-slate-400 mt-4">JPG, PNG, WebP — hingga beberapa file sekaligus</p>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Gambar ke PDF</h1>
+                <p className="text-sm text-[var(--text-muted)]">Konversi JPG, PNG menjadi satu dokumen PDF</p>
+              </div>
+              <DropZone onFiles={addImages} accept="image/jpeg,image/jpg,image/png,image/webp" multiple
+                label="Letakkan gambar di sini" sublabel="JPG, PNG, WebP — pilih beberapa sekaligus" />
             </div>
           </div>
         ) : (
           <>
-            {/* Image grid */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {images.map((img) => (
-                  <div
-                    key={img.id}
-                    draggable
-                    onDragStart={() => setDragSourceId(img.id)}
-                    onDragEnter={() => setDragOverId(img.id)}
-                    onDragEnd={() => { setDragSourceId(null); setDragOverId(null); }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleDrop(img.id)}
-                    className={`relative bg-white rounded-xl shadow-sm border-2 overflow-hidden cursor-grab active:cursor-grabbing transition-all ${
-                      dragSourceId === img.id
-                        ? "opacity-40 scale-95 border-slate-300"
-                        : dragOverId === img.id
-                        ? "border-red-500 ring-2 ring-red-200 scale-105"
-                        : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    {/* Drag handle */}
-                    <div className="absolute top-2 left-2 z-10 text-slate-400">
-                      <GripVertical className="w-4 h-4" />
-                    </div>
-                    {/* Remove button */}
-                    <button onClick={() => removeImage(img.id)}
-                      className="absolute top-2 right-2 z-10 w-6 h-6 bg-slate-700 hover:bg-slate-900 text-white rounded-full flex items-center justify-center transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
-
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                {images.map(img => (
+                  <div key={img.id} draggable
+                    onDragStart={() => setDragSrc(img.id)} onDragEnter={() => setDragOver(img.id)}
+                    onDragEnd={() => { setDragSrc(null); setDragOver(null); }}
+                    onDragOver={e => e.preventDefault()} onDrop={() => onDrop(img.id)}
+                    className={`relative bg-white rounded-xl border-2 overflow-hidden cursor-grab active:cursor-grabbing transition-all ${dragSrc === img.id ? "opacity-40 scale-95 border-[var(--border)]" : dragOver === img.id ? "border-brand-500 scale-105 shadow-[0_0_0_3px_rgba(230,72,9,.12)]" : "border-[var(--border)] hover:border-brand-200"}`}>
+                    <div className="absolute top-1.5 left-1.5 z-10 text-[var(--text-subtle)]"><GripVertical className="w-3.5 h-3.5" /></div>
+                    <button onClick={() => remove(img.id)} className="absolute top-1.5 right-1.5 z-10 w-5 h-5 bg-white border border-[var(--border)] rounded-full flex items-center justify-center text-[var(--text-subtle)] hover:text-red-500 transition-colors shadow-sm"><X className="w-3 h-3" /></button>
                     <div className="aspect-[3/4] overflow-hidden bg-slate-50">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.previewUrl} alt={img.file.name}
-                        className="w-full h-full object-contain" />
+                      <img src={img.previewUrl} alt={img.file.name} className="w-full h-full object-contain" />
                     </div>
-                    <div className="px-2 py-1.5 border-t border-slate-100">
-                      <p className="text-xs text-slate-600 truncate font-medium">{img.file.name}</p>
+                    <div className="px-2 py-1 border-t border-[var(--border)]">
+                      <p className="text-[10px] text-[var(--text-subtle)] truncate">{img.file.name}</p>
                     </div>
                   </div>
                 ))}
-
-                {/* Add more */}
                 <label className="cursor-pointer">
-                  <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" multiple
-                    onChange={(e) => e.target.files && addImages(Array.from(e.target.files))} className="hidden" />
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center hover:border-red-400 hover:bg-red-50 transition-colors aspect-[3/4] cursor-pointer">
-                    <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center mb-2">
-                      <Plus className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-xs font-semibold text-slate-600">Tambah gambar</span>
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple onChange={e => e.target.files && addImages(Array.from(e.target.files))} className="hidden" />
+                  <div className="flex flex-col items-center justify-center aspect-[3/4] rounded-xl border-2 border-dashed border-[var(--border)] hover:border-brand-300 hover:bg-brand-50/30 transition-colors text-[var(--text-subtle)] gap-2">
+                    <div className="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center"><Plus className="w-4 h-4 text-white" /></div>
+                    <span className="text-xs font-semibold">Tambah</span>
                   </div>
                 </label>
               </div>
-              <p className="text-center text-sm text-slate-400 mt-6">Seret gambar untuk mengubah urutannya di PDF</p>
+              <p className="text-center text-xs text-[var(--text-subtle)] mt-4">Seret gambar untuk mengubah urutan halaman PDF</p>
             </div>
-
-            {/* Settings sidebar */}
-            <div className="w-80 bg-white border-l border-slate-200 p-6 flex flex-col overflow-y-auto">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Gambar ke PDF</h2>
-
-              <div className="space-y-5 flex-1">
-                {/* Page size */}
+            <div className="sidebar">
+              <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Gambar ke PDF</h2></div>
+              <div className="sidebar-body">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Ukuran Halaman</label>
+                  <label className="label">Ukuran Halaman</label>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {["A4", "A3", "Letter", "Legal", "fit"].map((s) => (
+                    {["A4","A3","Letter","Legal","fit"].map(s => (
                       <button key={s} onClick={() => setPageSize(s)}
-                        className={`py-2 text-sm font-semibold rounded-lg border-2 transition-all ${
-                          pageSize === s
-                            ? "border-red-500 bg-red-50 text-red-700"
-                            : "border-slate-200 text-slate-500 hover:border-slate-300"
-                        }`}>
+                        className={`py-2 text-xs font-bold rounded-xl border-2 transition-all ${pageSize === s ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
                         {s === "fit" ? "Fit" : s}
                       </button>
                     ))}
                   </div>
-                  {pageSize === "fit" && (
-                    <p className="text-xs text-slate-400 mt-1">Halaman mengikuti ukuran gambar</p>
-                  )}
                 </div>
-
-                {/* Orientation (only when not fit) */}
                 {pageSize !== "fit" && (
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Orientasi</label>
+                    <label className="label">Orientasi</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {(["portrait", "landscape"] as const).map((o) => (
+                      {(["portrait","landscape"] as const).map(o => (
                         <button key={o} onClick={() => setOrientation(o)}
-                          className={`py-2.5 text-sm font-semibold rounded-xl border-2 transition-all flex items-center justify-center gap-1.5 ${
-                            orientation === o
-                              ? "border-red-500 bg-red-50 text-red-700"
-                              : "border-slate-200 text-slate-500 hover:border-slate-300"
-                          }`}>
+                          className={`py-2.5 text-xs font-semibold rounded-xl border-2 transition-all ${orientation === o ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
                           {o === "portrait" ? "↕ Portrait" : "↔ Landscape"}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* Fit mode */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Mode Gambar</label>
-                  <div className="space-y-2">
-                    {[
-                      { id: "contain",  label: "Contain", desc: "Pertahankan rasio, tambah margin" },
-                      { id: "stretch",  label: "Stretch", desc: "Isi seluruh halaman" },
-                      { id: "original", label: "Original", desc: "Ukuran asli gambar" },
-                    ].map((m) => (
-                      <label key={m.id}
-                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                          fitMode === m.id
-                            ? "border-red-500 bg-red-50"
-                            : "border-slate-200 hover:border-slate-300"
-                        }`}>
-                        <input type="radio" name="fitMode" value={m.id}
-                          checked={fitMode === m.id} onChange={() => setFitMode(m.id as any)}
-                          className="mt-0.5 accent-red-600" />
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800">{m.label}</p>
-                          <p className="text-xs text-slate-500">{m.desc}</p>
-                        </div>
+                  <label className="label">Mode Gambar</label>
+                  <div className="space-y-1.5">
+                    {[{ id: "contain", l: "Contain", d: "Pertahankan rasio, tambah margin" }, { id: "stretch", l: "Stretch", d: "Isi seluruh halaman" }, { id: "original", l: "Original", d: "Ukuran asli gambar" }].map(m => (
+                      <label key={m.id} className={`flex items-start gap-2.5 p-2.5 rounded-xl border-2 cursor-pointer transition-all ${fitMode === m.id ? "border-brand-500 bg-brand-50" : "border-[var(--border)] hover:border-brand-200"}`}>
+                        <input type="radio" name="fitMode" value={m.id} checked={fitMode === m.id} onChange={() => setFitMode(m.id as any)} className="mt-0.5 accent-brand-500" />
+                        <div><p className="text-xs font-semibold text-[var(--text)]">{m.l}</p><p className="text-[11px] text-[var(--text-subtle)]">{m.d}</p></div>
                       </label>
                     ))}
                   </div>
                 </div>
-
-                {/* Margin */}
                 {pageSize !== "fit" && (
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Margin: <span className="text-red-600">{margin}px</span>
-                    </label>
-                    <input type="range" min={0} max={80} value={margin}
-                      onChange={(e) => setMargin(parseInt(e.target.value))}
-                      className="w-full accent-red-600" />
+                    <label className="label">Margin: <span className="text-brand-500">{margin}px</span></label>
+                    <input type="range" min={0} max={80} value={margin} onChange={e => setMargin(+e.target.value)} className="w-full accent-brand-500" />
                   </div>
                 )}
-
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-semibold">{images.length} gambar</span> akan digabung menjadi 1 file PDF.
-                    Seret gambar untuk mengubah urutan halaman.
-                  </p>
-                </div>
               </div>
-
-              <button
-                onClick={handleConvert}
-                disabled={isProcessing || images.length === 0}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3 shadow-lg mt-6"
-              >
-                {isProcessing ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Mengkonversi...</>
-                ) : (
-                  <><ImageIcon className="w-5 h-5" /> Konversi ke PDF</>
-                )}
-              </button>
+              <div className="sidebar-footer space-y-2">
+                <Button onClick={handleConvert} loading={processing} disabled={images.length === 0} fullWidth size="lg" icon={<ImageIcon className="w-5 h-5"/>}>
+                  {processing ? "Mengkonversi…" : "Konversi ke PDF"}
+                </Button>
+              </div>
             </div>
           </>
         )}

@@ -1,137 +1,74 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Upload, Loader2, Hash } from "lucide-react";
+import { Hash } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
+import DropZone from "@/components/DropZone";
+import Button from "@/components/Button";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const POSITIONS = [
-  { id: "top-left",      label: "Kiri Atas",    col: 1, row: 1 },
-  { id: "top-center",    label: "Tengah Atas",  col: 2, row: 1 },
-  { id: "top-right",     label: "Kanan Atas",   col: 3, row: 1 },
-  { id: "bottom-left",   label: "Kiri Bawah",   col: 1, row: 2 },
-  { id: "bottom-center", label: "Tengah Bawah", col: 2, row: 2 },
-  { id: "bottom-right",  label: "Kanan Bawah",  col: 3, row: 2 },
+  { id: "top-left", label: "Kiri Atas" }, { id: "top-center", label: "Tengah Atas" }, { id: "top-right", label: "Kanan Atas" },
+  { id: "bottom-left", label: "Kiri Bawah" }, { id: "bottom-center", label: "Tengah Bawah" }, { id: "bottom-right", label: "Kanan Bawah" },
 ];
-
 const FORMAT_PRESETS = [
-  { id: "{n}",            label: "1, 2, 3 …" },
-  { id: "Page {n}",       label: "Page 1, Page 2 …" },
-  { id: "{n} / {total}",  label: "1 / 10, 2 / 10 …" },
-  { id: "- {n} -",        label: "- 1 -, - 2 - …" },
+  { id: "{n}", label: "1, 2, 3 …" }, { id: "Page {n}", label: "Page 1, Page 2 …" },
+  { id: "{n} / {total}", label: "1 / 10 …" }, { id: "- {n} -", label: "- 1 -, - 2 - …" },
 ];
 
-function PagePreview({
-  file,
-  pageNumber,
-  totalPages,
-  format,
-  fontSize,
-  color,
-  position,
-  startNumber,
-  skipFirstPage,
-  marginX,
-  marginY,
-}: {
-  file: File;
-  pageNumber: number;
-  totalPages: number;
-  format: string;
-  fontSize: number;
-  color: string;
-  position: string;
-  startNumber: number;
-  skipFirstPage: boolean;
-  marginX: number;
-  marginY: number;
-}) {
-  const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
-  const overlayRef = useRef<HTMLCanvasElement>(null);
+function Preview({ file, pageNumber, totalPages, format, fontSize, color, position, startNumber, skipFirst, marginX, marginY }: any) {
+  const pdfRef = useRef<HTMLCanvasElement>(null);
+  const ovRef  = useRef<HTMLCanvasElement>(null);
   const [dims, setDims] = useState({ w: 0, h: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
+    let alive = true;
+    (async () => {
       try {
         const ab = await file.arrayBuffer();
-        if (cancelled) return;
+        if (!alive) return;
         const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-        if (cancelled) { pdf.destroy(); return; }
         const page = await pdf.getPage(pageNumber);
-        const scale = 1.2;
-        const viewport = page.getViewport({ scale });
-        const canvas = pdfCanvasRef.current;
-        if (!canvas) { pdf.destroy(); return; }
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
-        if (!cancelled) {
-          setDims({ w: viewport.width, h: viewport.height });
-          setIsLoading(false);
-        }
+        const vp = page.getViewport({ scale: 1.1 });
+        const c = pdfRef.current!; c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext("2d")!, viewport: vp }).promise;
+        if (alive) { setDims({ w: vp.width, h: vp.height }); setLoading(false); }
         pdf.destroy();
-      } catch {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
+      } catch { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
   }, [file, pageNumber]);
 
-  // Draw number overlay
   useEffect(() => {
-    if (!overlayRef.current || dims.w === 0) return;
-    const canvas = overlayRef.current;
-    canvas.width = dims.w;
-    canvas.height = dims.h;
-    const ctx = canvas.getContext("2d")!;
-    ctx.clearRect(0, 0, dims.w, dims.h);
-
-    if (skipFirstPage && pageNumber === 1) return;
-
-    const displayNumber = pageNumber + startNumber - 1;
-    const text = format
-      .replace("{n}", String(displayNumber))
-      .replace("{total}", String(totalPages));
-
-    // Scale margins proportionally (PDF assumed 595pt wide)
-    const scale = dims.w / 595;
-    const scaledFontSize = Math.round(fontSize * scale);
-    const scaledMarginX = marginX * scale;
-    const scaledMarginY = marginY * scale;
-
-    ctx.font = `${scaledFontSize}px Arial`;
-    ctx.fillStyle = color;
-
-    const tw = ctx.measureText(text).width;
-    const th = scaledFontSize;
-
+    if (!ovRef.current || dims.w === 0) return;
+    const c = ovRef.current; c.width = dims.w; c.height = dims.h;
+    const ctx = c.getContext("2d")!; ctx.clearRect(0, 0, dims.w, dims.h);
+    if (skipFirst && pageNumber === 1) return;
+    const sf = dims.w / 595;
+    const sfSize = Math.round(fontSize * sf);
+    const sfMX = marginX * sf, sfMY = marginY * sf;
+    ctx.font = `${sfSize}px Inter, sans-serif`; ctx.fillStyle = color;
+    const displayN = pageNumber + startNumber - 1;
+    const txt = format.replace("{n}", String(displayN)).replace("{total}", String(totalPages));
+    const tw = ctx.measureText(txt).width;
     let x = 0, y = 0;
-    switch (position) {
-      case "top-left":      x = scaledMarginX;              y = scaledMarginY + th; break;
-      case "top-center":    x = (dims.w - tw) / 2;          y = scaledMarginY + th; break;
-      case "top-right":     x = dims.w - tw - scaledMarginX;y = scaledMarginY + th; break;
-      case "bottom-left":   x = scaledMarginX;              y = dims.h - scaledMarginY; break;
-      case "bottom-center": x = (dims.w - tw) / 2;          y = dims.h - scaledMarginY; break;
-      case "bottom-right":  x = dims.w - tw - scaledMarginX;y = dims.h - scaledMarginY; break;
-    }
-
-    ctx.fillText(text, x, y);
-  }, [dims, format, fontSize, color, position, startNumber, skipFirstPage, pageNumber, totalPages, marginX, marginY]);
+    if (position === "top-left")      { x = sfMX;                  y = sfMY + sfSize; }
+    else if (position === "top-center")    { x = (dims.w - tw) / 2;     y = sfMY + sfSize; }
+    else if (position === "top-right")     { x = dims.w - tw - sfMX;    y = sfMY + sfSize; }
+    else if (position === "bottom-left")   { x = sfMX;                  y = dims.h - sfMY; }
+    else if (position === "bottom-center") { x = (dims.w - tw) / 2;     y = dims.h - sfMY; }
+    else if (position === "bottom-right")  { x = dims.w - tw - sfMX;    y = dims.h - sfMY; }
+    ctx.fillText(txt, x, y);
+  }, [dims, format, fontSize, color, position, startNumber, skipFirst, pageNumber, totalPages, marginX, marginY]);
 
   return (
-    <div className="relative inline-block shadow-lg rounded overflow-hidden bg-white">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
-          <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
-        </div>
-      )}
-      <canvas ref={pdfCanvasRef} className="block" />
-      <canvas ref={overlayRef} className="absolute top-0 left-0 pointer-events-none" />
+    <div className="relative inline-block shadow-[var(--shadow-lg)] rounded-lg overflow-hidden bg-white">
+      {loading && <div className="w-64 h-80 flex items-center justify-center"><div className="w-6 h-6 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" /></div>}
+      <canvas ref={pdfRef} style={{ display: loading ? "none" : "block" }} />
+      <canvas ref={ovRef} className="absolute top-0 left-0 pointer-events-none" />
     </div>
   );
 }
@@ -139,231 +76,132 @@ function PagePreview({
 export default function PageNumbersPage() {
   const [file, setFile] = useState<File | null>(null);
   const [totalPages, setTotalPages] = useState(0);
-  const [currentPreviewPage, setCurrentPreviewPage] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Settings
+  const [previewPage, setPreviewPage] = useState(1);
+  const [processing, setProcessing] = useState(false);
   const [format, setFormat] = useState("{n}");
   const [customFormat, setCustomFormat] = useState("{n}");
-  const [useCustomFormat, setUseCustomFormat] = useState(false);
+  const [useCustom, setUseCustom] = useState(false);
   const [fontSize, setFontSize] = useState(12);
   const [color, setColor] = useState("#000000");
   const [position, setPosition] = useState("bottom-center");
   const [startNumber, setStartNumber] = useState(1);
-  const [skipFirstPage, setSkipFirstPage] = useState(false);
+  const [skipFirst, setSkipFirst] = useState(false);
   const [marginX, setMarginX] = useState(40);
   const [marginY, setMarginY] = useState(24);
 
-  const activeFormat = useCustomFormat ? customFormat : format;
+  const activeFormat = useCustom ? customFormat : format;
 
-  const loadFile = useCallback(async (f: File) => {
-    setFile(f);
+  const loadFile = useCallback(async (files: File[]) => {
+    const f = files[0]; setFile(f);
     const ab = await f.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-    setTotalPages(pdf.numPages);
-    pdf.destroy();
-    setCurrentPreviewPage(1);
+    setTotalPages(pdf.numPages); pdf.destroy(); setPreviewPage(1);
   }, []);
 
   const handleApply = async () => {
     if (!file) return;
-    setIsProcessing(true);
+    setProcessing(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("position", position);
-      formData.append("format", activeFormat);
-      formData.append("fontSize", fontSize.toString());
-      formData.append("color", color);
-      formData.append("startNumber", startNumber.toString());
-      formData.append("marginX", marginX.toString());
-      formData.append("marginY", marginY.toString());
-      formData.append("skipFirstPage", skipFirstPage.toString());
-
-      const res = await fetch("/api/page-numbers", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Gagal");
-
+      const fd = new FormData();
+      fd.append("file", file); fd.append("position", position); fd.append("format", activeFormat);
+      fd.append("fontSize", String(fontSize)); fd.append("color", color);
+      fd.append("startNumber", String(startNumber)); fd.append("marginX", String(marginX));
+      fd.append("marginY", String(marginY)); fd.append("skipFirstPage", String(skipFirst));
+      const res = await fetch("/api/page-numbers", { method: "POST", body: fd });
+      if (!res.ok) throw new Error();
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "numbered.pdf";
-      a.click();
+      const a = document.createElement("a"); a.href = url; a.download = "numbered.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      alert("Gagal memproses file");
-    } finally {
-      setIsProcessing(false);
-    }
+    } catch { alert("Gagal memproses file"); }
+    finally { setProcessing(false); }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
       <Header activePath="/page-numbers" />
-
-      <main className="flex min-h-[calc(100vh-4rem)]">
+      <main className="flex min-h-[calc(100vh-60px)]">
         {!file ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-10 shadow-sm max-w-md w-full text-center">
-              <div className="bg-teal-50 w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <Hash className="w-10 h-10 text-teal-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-3">Nomor Halaman PDF</h2>
-              <p className="text-slate-500 mb-8">Tambahkan nomor halaman ke dokumen PDF dengan posisi dan format kustom</p>
-              <label className="cursor-pointer">
-                <input type="file" accept="application/pdf" onChange={(e) => e.target.files && loadFile(e.target.files[0])} className="hidden" />
-                <div className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3">
-                  <Upload className="w-6 h-6" /> Pilih File PDF
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="w-full max-w-lg">
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: "#f0fdfa" }}>
+                  <Hash className="w-7 h-7 text-teal-600" />
                 </div>
-              </label>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Nomor Halaman PDF</h1>
+                <p className="text-sm text-[var(--text-muted)]">Tambahkan nomor halaman dengan posisi dan format kustom</p>
+              </div>
+              <DropZone onFiles={loadFile} accept="application/pdf" />
             </div>
           </div>
         ) : (
           <>
-            {/* Preview */}
             <div className="flex-1 overflow-auto p-8 flex flex-col items-center gap-4">
-              <div className="flex items-center gap-3 mb-2">
-                <button onClick={() => setCurrentPreviewPage(p => Math.max(1, p - 1))} disabled={currentPreviewPage <= 1}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-slate-50">
-                  ← Prev
-                </button>
-                <span className="text-sm text-slate-600 font-medium">Halaman {currentPreviewPage} / {totalPages}</span>
-                <button onClick={() => setCurrentPreviewPage(p => Math.min(totalPages, p + 1))} disabled={currentPreviewPage >= totalPages}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-slate-50">
-                  Next →
-                </button>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage <= 1} variant="outline" size="sm">← Prev</Button>
+                <span className="text-sm text-[var(--text-muted)] font-medium px-2">{previewPage} / {totalPages}</span>
+                <Button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage >= totalPages} variant="outline" size="sm">Next →</Button>
               </div>
-              <PagePreview
-                file={file}
-                pageNumber={currentPreviewPage}
-                totalPages={totalPages}
-                format={activeFormat}
-                fontSize={fontSize}
-                color={color}
-                position={position}
-                startNumber={startNumber}
-                skipFirstPage={skipFirstPage}
-                marginX={marginX}
-                marginY={marginY}
-              />
+              <Preview file={file} pageNumber={previewPage} totalPages={totalPages} format={activeFormat}
+                fontSize={fontSize} color={color} position={position} startNumber={startNumber}
+                skipFirst={skipFirst} marginX={marginX} marginY={marginY} />
             </div>
-
-            {/* Settings */}
-            <div className="w-80 bg-white border-l border-slate-200 p-6 flex flex-col overflow-y-auto">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Nomor Halaman</h2>
-
-              <div className="space-y-5 flex-1">
-                {/* Position grid */}
+            <div className="sidebar">
+              <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Nomor Halaman</h2></div>
+              <div className="sidebar-body">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Posisi</label>
+                  <label className="label">Posisi</label>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {POSITIONS.map((pos) => (
-                      <button key={pos.id} onClick={() => setPosition(pos.id)}
-                        className={`py-2 px-1 text-xs font-medium rounded-lg border-2 transition-all ${
-                          position === pos.id
-                            ? "border-red-500 bg-red-50 text-red-700"
-                            : "border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}>
-                        {pos.label}
+                    {POSITIONS.map(p => (
+                      <button key={p.id} onClick={() => setPosition(p.id)}
+                        className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border-2 transition-all ${position === p.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
+                        {p.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Format presets */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Format</label>
+                  <label className="label">Format</label>
                   <div className="grid grid-cols-2 gap-1.5 mb-2">
-                    {FORMAT_PRESETS.map((f) => (
-                      <button key={f.id}
-                        onClick={() => { setFormat(f.id); setUseCustomFormat(false); }}
-                        className={`py-2 px-2 text-xs font-medium rounded-lg border-2 transition-all ${
-                          !useCustomFormat && format === f.id
-                            ? "border-red-500 bg-red-50 text-red-700"
-                            : "border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}>
+                    {FORMAT_PRESETS.map(f => (
+                      <button key={f.id} onClick={() => { setFormat(f.id); setUseCustom(false); }}
+                        className={`py-1.5 text-[11px] font-semibold rounded-lg border-2 transition-all ${!useCustom && format === f.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
                         {f.label}
                       </button>
                     ))}
                   </div>
-                  <div className="mt-2">
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-600 mb-1.5 cursor-pointer">
-                      <input type="checkbox" checked={useCustomFormat} onChange={(e) => setUseCustomFormat(e.target.checked)} className="rounded" />
-                      Format kustom
-                    </label>
-                    {useCustomFormat && (
-                      <input type="text" value={customFormat} onChange={(e) => setCustomFormat(e.target.value)}
-                        placeholder="cth: Hal. {n} dari {total}"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-red-400" />
-                    )}
-                    <p className="text-xs text-slate-400 mt-1">Gunakan {"{n}"} untuk nomor halaman, {"{total}"} untuk total halaman</p>
-                  </div>
+                  <label className="flex items-center gap-2 text-xs mb-1 cursor-pointer">
+                    <input type="checkbox" checked={useCustom} onChange={e => setUseCustom(e.target.checked)} className="accent-brand-500" />
+                    <span className="text-[var(--text-muted)]">Format kustom</span>
+                  </label>
+                  {useCustom && <input value={customFormat} onChange={e => setCustomFormat(e.target.value)} placeholder="cth: Hal. {n} dari {total}" className="input text-xs" />}
+                  <p className="text-[10px] text-[var(--text-subtle)] mt-1">Gunakan {"{n}"} nomor halaman, {"{total}"} total halaman</p>
                 </div>
-
-                {/* Font size + color */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Ukuran: <span className="text-red-600">{fontSize}px</span>
-                    </label>
-                    <input type="range" min={8} max={32} value={fontSize}
-                      onChange={(e) => setFontSize(parseInt(e.target.value))}
-                      className="w-full accent-red-600" />
+                    <label className="label">Ukuran: <span className="text-brand-500">{fontSize}px</span></label>
+                    <input type="range" min={8} max={32} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-brand-500" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Warna</label>
-                    <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-slate-300 cursor-pointer" />
+                    <label className="label">Warna</label>
+                    <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--border)] cursor-pointer" />
                   </div>
                 </div>
-
-                {/* Start number */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Mulai dari nomor</label>
-                  <input type="number" min={0} value={startNumber}
-                    onChange={(e) => setStartNumber(parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-red-400" />
+                  <label className="label">Mulai dari nomor</label>
+                  <input type="number" min={0} value={startNumber} onChange={e => setStartNumber(+e.target.value || 1)} className="input" />
                 </div>
-
-                {/* Margins */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Margin X: <span className="text-red-600">{marginX}</span>
-                    </label>
-                    <input type="range" min={10} max={100} value={marginX}
-                      onChange={(e) => setMarginX(parseInt(e.target.value))}
-                      className="w-full accent-red-600" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Margin Y: <span className="text-red-600">{marginY}</span>
-                    </label>
-                    <input type="range" min={10} max={80} value={marginY}
-                      onChange={(e) => setMarginY(parseInt(e.target.value))}
-                      className="w-full accent-red-600" />
-                  </div>
-                </div>
-
-                {/* Skip first page */}
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={skipFirstPage} onChange={(e) => setSkipFirstPage(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300" />
-                  <span className="text-sm font-medium text-slate-700">Lewati halaman pertama (cover)</span>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" checked={skipFirst} onChange={e => setSkipFirst(e.target.checked)} className="w-4 h-4 accent-brand-500 rounded" />
+                  <span className="text-sm text-[var(--text-muted)]">Lewati halaman pertama (cover)</span>
                 </label>
               </div>
-
-              <button
-                onClick={handleApply}
-                disabled={isProcessing}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3 shadow-lg mt-6"
-              >
-                {isProcessing ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</>
-                ) : (
-                  <><Hash className="w-5 h-5" /> Tambah Nomor Halaman</>
-                )}
-              </button>
+              <div className="sidebar-footer space-y-2">
+                <Button onClick={handleApply} loading={processing} fullWidth size="lg" icon={<Hash className="w-5 h-5"/>}>
+                  {processing ? "Memproses…" : "Tambah Nomor Halaman"}
+                </Button>
+                <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">Ganti file</Button>
+              </div>
             </div>
           </>
         )}

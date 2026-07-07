@@ -1,127 +1,82 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Upload, Loader2, Stamp } from "lucide-react";
+import { Stamp } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
+import DropZone from "@/components/DropZone";
+import Button from "@/components/Button";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const POSITIONS = [
-  { id: "top-left",     label: "Kiri Atas" },
-  { id: "top-center",   label: "Tengah Atas" },
-  { id: "top-right",    label: "Kanan Atas" },
-  { id: "center",       label: "Tengah" },
-  { id: "diagonal",     label: "Diagonal" },
-  { id: "bottom-left",  label: "Kiri Bawah" },
-  { id: "bottom-center",label: "Tengah Bawah" },
-  { id: "bottom-right", label: "Kanan Bawah" },
+  { id: "top-left", label: "Kiri Atas" }, { id: "top-center", label: "Tengah Atas" }, { id: "top-right", label: "Kanan Atas" },
+  { id: "center", label: "Tengah" }, { id: "diagonal", label: "Diagonal" },
+  { id: "bottom-left", label: "Kiri Bawah" }, { id: "bottom-center", label: "Tengah Bawah" }, { id: "bottom-right", label: "Kanan Bawah" },
 ];
 
-function PagePreview({
-  file,
-  pageNumber,
-  watermarkText,
-  color,
-  opacity,
-  fontSize,
-  position,
-  rotation,
-}: {
-  file: File;
-  pageNumber: number;
-  watermarkText: string;
-  color: string;
-  opacity: number;
-  fontSize: number;
-  position: string;
-  rotation: number;
+function Preview({ file, pageNumber, text, color, opacity, fontSize, position, rotation }: {
+  file: File; pageNumber: number; text: string; color: string; opacity: number;
+  fontSize: number; position: string; rotation: number;
 }) {
-  const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
-  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const pdfRef = useRef<HTMLCanvasElement>(null);
+  const ovRef  = useRef<HTMLCanvasElement>(null);
   const [dims, setDims] = useState({ w: 0, h: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // Render PDF page
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
+    let alive = true;
+    (async () => {
       try {
         const ab = await file.arrayBuffer();
-        if (cancelled) return;
+        if (!alive) return;
         const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-        if (cancelled) { pdf.destroy(); return; }
+        if (!alive) { pdf.destroy(); return; }
         const page = await pdf.getPage(pageNumber);
-        const scale = 1.2;
-        const viewport = page.getViewport({ scale });
-        const canvas = pdfCanvasRef.current;
-        if (!canvas) { pdf.destroy(); return; }
-        const ctx = canvas.getContext("2d")!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        if (!cancelled) {
-          setDims({ w: viewport.width, h: viewport.height });
-          setIsLoading(false);
-        }
+        const vp = page.getViewport({ scale: 1.1 });
+        const c = pdfRef.current!;
+        c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext("2d")!, viewport: vp }).promise;
+        if (alive) { setDims({ w: vp.width, h: vp.height }); setLoading(false); }
         pdf.destroy();
-      } catch {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
+      } catch { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
   }, [file, pageNumber]);
 
-  // Draw watermark overlay
   useEffect(() => {
-    if (!overlayCanvasRef.current || dims.w === 0 || !watermarkText) return;
-    const canvas = overlayCanvasRef.current;
-    canvas.width = dims.w;
-    canvas.height = dims.h;
-    const ctx = canvas.getContext("2d")!;
+    if (!ovRef.current || dims.w === 0 || !text) return;
+    const c = ovRef.current; c.width = dims.w; c.height = dims.h;
+    const ctx = c.getContext("2d")!;
     ctx.clearRect(0, 0, dims.w, dims.h);
-
-    const scaledFontSize = Math.round(fontSize * (dims.w / 595));
-    ctx.font = `bold ${scaledFontSize}px Arial`;
-    ctx.fillStyle = color;
-    ctx.globalAlpha = opacity;
-
-    const metrics = ctx.measureText(watermarkText);
-    const tw = metrics.width;
-    const th = scaledFontSize;
-
-    let x = 0, y = 0;
-    switch (position) {
-      case "center":       x = (dims.w - tw) / 2; y = (dims.h + th) / 2; break;
-      case "top-left":     x = 20; y = th + 20; break;
-      case "top-center":   x = (dims.w - tw) / 2; y = th + 20; break;
-      case "top-right":    x = dims.w - tw - 20; y = th + 20; break;
-      case "bottom-left":  x = 20; y = dims.h - 20; break;
-      case "bottom-center":x = (dims.w - tw) / 2; y = dims.h - 20; break;
-      case "bottom-right": x = dims.w - tw - 20; y = dims.h - 20; break;
-      case "diagonal":
-        ctx.save();
-        ctx.translate(dims.w / 2, dims.h / 2);
-        ctx.rotate((-rotation * Math.PI) / 180);
-        ctx.fillText(watermarkText, -tw / 2, th / 2);
-        ctx.restore();
-        ctx.globalAlpha = 1;
-        return;
+    const sf = dims.w / 595;
+    ctx.font = `bold ${Math.round(fontSize * sf)}px Inter, sans-serif`;
+    ctx.fillStyle = color; ctx.globalAlpha = opacity;
+    const tw = ctx.measureText(text).width;
+    const th = Math.round(fontSize * sf);
+    if (position === "diagonal") {
+      ctx.save(); ctx.translate(dims.w / 2, dims.h / 2); ctx.rotate((-rotation * Math.PI) / 180);
+      ctx.fillText(text, -tw / 2, th / 2); ctx.restore();
+    } else {
+      const m = 20 * sf;
+      let x = 0, y = 0;
+      if (position === "center")        { x = (dims.w - tw) / 2; y = (dims.h + th) / 2; }
+      else if (position === "top-left") { x = m; y = th + m; }
+      else if (position === "top-center") { x = (dims.w - tw) / 2; y = th + m; }
+      else if (position === "top-right")  { x = dims.w - tw - m; y = th + m; }
+      else if (position === "bottom-left")   { x = m; y = dims.h - m; }
+      else if (position === "bottom-center") { x = (dims.w - tw) / 2; y = dims.h - m; }
+      else if (position === "bottom-right")  { x = dims.w - tw - m; y = dims.h - m; }
+      ctx.fillText(text, x, y);
     }
-    ctx.fillText(watermarkText, x, y);
     ctx.globalAlpha = 1;
-  }, [dims, watermarkText, color, opacity, fontSize, position, rotation]);
+  }, [dims, text, color, opacity, fontSize, position, rotation]);
 
   return (
-    <div className="relative inline-block shadow-lg rounded-lg overflow-hidden bg-white">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
-          <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" />
-        </div>
-      )}
-      <canvas ref={pdfCanvasRef} className="block" />
-      <canvas ref={overlayCanvasRef} className="absolute top-0 left-0 pointer-events-none" />
+    <div className="relative inline-block shadow-[var(--shadow-lg)] rounded-lg overflow-hidden bg-white">
+      {loading && <div className="w-64 h-80 flex items-center justify-center"><div className="w-6 h-6 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" /></div>}
+      <canvas ref={pdfRef} className="block" style={{ display: loading ? "none" : "block" }} />
+      <canvas ref={ovRef} className="absolute top-0 left-0 pointer-events-none" />
     </div>
   );
 }
@@ -129,11 +84,9 @@ function PagePreview({
 export default function WatermarkPage() {
   const [file, setFile] = useState<File | null>(null);
   const [totalPages, setTotalPages] = useState(0);
-  const [currentPreviewPage, setCurrentPreviewPage] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Watermark settings
-  const [watermarkText, setWatermarkText] = useState("CONFIDENTIAL");
+  const [previewPage, setPreviewPage] = useState(1);
+  const [processing, setProcessing] = useState(false);
+  const [text, setText] = useState("CONFIDENTIAL");
   const [fontSize, setFontSize] = useState(48);
   const [color, setColor] = useState("#FF0000");
   const [opacity, setOpacity] = useState(0.3);
@@ -141,215 +94,118 @@ export default function WatermarkPage() {
   const [rotation, setRotation] = useState(45);
   const [applyTo, setApplyTo] = useState<"all" | "odd" | "even">("all");
 
-  const loadFile = useCallback(async (f: File) => {
-    setFile(f);
+  const loadFile = useCallback(async (files: File[]) => {
+    const f = files[0]; setFile(f);
     const ab = await f.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-    setTotalPages(pdf.numPages);
-    pdf.destroy();
-    setCurrentPreviewPage(1);
+    setTotalPages(pdf.numPages); pdf.destroy(); setPreviewPage(1);
   }, []);
 
-  const handleWatermark = async () => {
-    if (!file || !watermarkText.trim()) return;
-    setIsProcessing(true);
+  const handleApply = async () => {
+    if (!file || !text.trim()) return;
+    setProcessing(true);
     try {
       let pageIndices: number[] | "all" = "all";
-      if (applyTo === "odd") {
-        pageIndices = Array.from({ length: totalPages }, (_, i) => i).filter(i => i % 2 === 0);
-      } else if (applyTo === "even") {
-        pageIndices = Array.from({ length: totalPages }, (_, i) => i).filter(i => i % 2 === 1);
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("text", watermarkText);
-      formData.append("fontSize", fontSize.toString());
-      formData.append("opacity", opacity.toString());
-      formData.append("rotation", rotation.toString());
-      formData.append("color", color);
-      formData.append("position", position);
-      formData.append("pages", pageIndices === "all" ? "all" : JSON.stringify(pageIndices));
-
-      const res = await fetch("/api/watermark", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Gagal");
-
+      if (applyTo === "odd") pageIndices = Array.from({ length: totalPages }, (_, i) => i).filter(i => i % 2 === 0);
+      else if (applyTo === "even") pageIndices = Array.from({ length: totalPages }, (_, i) => i).filter(i => i % 2 === 1);
+      const fd = new FormData();
+      fd.append("file", file); fd.append("text", text); fd.append("fontSize", String(fontSize));
+      fd.append("opacity", String(opacity)); fd.append("rotation", String(rotation));
+      fd.append("color", color); fd.append("position", position);
+      fd.append("pages", pageIndices === "all" ? "all" : JSON.stringify(pageIndices));
+      const res = await fetch("/api/watermark", { method: "POST", body: fd });
+      if (!res.ok) throw new Error();
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "watermarked.pdf";
-      a.click();
+      const a = document.createElement("a"); a.href = url; a.download = "watermarked.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      alert("Gagal memproses file");
-    } finally {
-      setIsProcessing(false);
-    }
+    } catch { alert("Gagal memproses file"); }
+    finally { setProcessing(false); }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
       <Header activePath="/watermark" />
-
-      <main className="flex min-h-[calc(100vh-4rem)]">
+      <main className="flex min-h-[calc(100vh-60px)]">
         {!file ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-10 shadow-sm max-w-md w-full text-center">
-              <div className="bg-indigo-50 w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <Stamp className="w-10 h-10 text-indigo-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-3">Watermark PDF</h2>
-              <p className="text-slate-500 mb-8">Tambahkan teks watermark pada setiap halaman PDF Anda</p>
-              <label className="cursor-pointer">
-                <input type="file" accept="application/pdf" onChange={(e) => e.target.files && loadFile(e.target.files[0])} className="hidden" />
-                <div className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3">
-                  <Upload className="w-6 h-6" /> Pilih File PDF
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="w-full max-w-lg">
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: "#f5f3ff" }}>
+                  <Stamp className="w-7 h-7 text-violet-600" />
                 </div>
-              </label>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Watermark PDF</h1>
+                <p className="text-sm text-[var(--text-muted)]">Tambahkan teks watermark pada setiap halaman PDF</p>
+              </div>
+              <DropZone onFiles={loadFile} accept="application/pdf" />
             </div>
           </div>
         ) : (
           <>
-            {/* Preview Area */}
             <div className="flex-1 overflow-auto p-8 flex flex-col items-center gap-4">
-              <div className="flex items-center gap-3 mb-2">
-                <button
-                  onClick={() => setCurrentPreviewPage(p => Math.max(1, p - 1))}
-                  disabled={currentPreviewPage <= 1}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-slate-50"
-                >
-                  ← Prev
-                </button>
-                <span className="text-sm text-slate-600 font-medium">Halaman {currentPreviewPage} / {totalPages}</span>
-                <button
-                  onClick={() => setCurrentPreviewPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPreviewPage >= totalPages}
-                  className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-slate-50"
-                >
-                  Next →
-                </button>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage <= 1} variant="outline" size="sm">← Prev</Button>
+                <span className="text-sm text-[var(--text-muted)] font-medium px-2">{previewPage} / {totalPages}</span>
+                <Button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage >= totalPages} variant="outline" size="sm">Next →</Button>
               </div>
-              <PagePreview
-                file={file}
-                pageNumber={currentPreviewPage}
-                watermarkText={watermarkText}
-                color={color}
-                opacity={opacity}
-                fontSize={fontSize}
-                position={position}
-                rotation={rotation}
-              />
+              <Preview file={file} pageNumber={previewPage} text={text} color={color} opacity={opacity} fontSize={fontSize} position={position} rotation={rotation} />
             </div>
-
-            {/* Settings Panel */}
-            <div className="w-80 bg-white border-l border-slate-200 p-6 flex flex-col overflow-y-auto">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Watermark PDF</h2>
-
-              <div className="space-y-5 flex-1">
-                {/* Watermark Text */}
+            <div className="sidebar">
+              <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Watermark PDF</h2></div>
+              <div className="sidebar-body">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Teks Watermark</label>
-                  <input
-                    type="text"
-                    value={watermarkText}
-                    onChange={(e) => setWatermarkText(e.target.value)}
-                    placeholder="Contoh: CONFIDENTIAL"
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:border-red-400"
-                  />
+                  <label className="label">Teks Watermark</label>
+                  <input value={text} onChange={e => setText(e.target.value)} placeholder="cth: CONFIDENTIAL" className="input" />
                 </div>
-
-                {/* Font Size */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Ukuran Font: <span className="text-red-600">{fontSize}px</span>
-                  </label>
-                  <input type="range" min={12} max={120} value={fontSize}
-                    onChange={(e) => setFontSize(parseInt(e.target.value))}
-                    className="w-full accent-red-600" />
+                  <label className="label">Ukuran Font: <span className="text-brand-500">{fontSize}px</span></label>
+                  <input type="range" min={12} max={120} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-brand-500" />
                 </div>
-
-                {/* Color + Opacity row */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Warna</label>
-                    <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-slate-300 cursor-pointer" />
+                    <label className="label">Warna</label>
+                    <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--border)] cursor-pointer" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Opacity: <span className="text-red-600">{Math.round(opacity * 100)}%</span>
-                    </label>
-                    <input type="range" min={5} max={100} value={Math.round(opacity * 100)}
-                      onChange={(e) => setOpacity(parseInt(e.target.value) / 100)}
-                      className="w-full accent-red-600 mt-1" />
+                    <label className="label">Opacity: <span className="text-brand-500">{Math.round(opacity * 100)}%</span></label>
+                    <input type="range" min={5} max={100} value={Math.round(opacity * 100)} onChange={e => setOpacity(+e.target.value / 100)} className="w-full accent-brand-500 mt-2" />
                   </div>
                 </div>
-
-                {/* Position Grid */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Posisi</label>
+                  <label className="label">Posisi</label>
                   <div className="grid grid-cols-3 gap-1.5">
-                    {POSITIONS.map((pos) => (
-                      <button
-                        key={pos.id}
-                        onClick={() => setPosition(pos.id)}
-                        className={`py-2 px-1 text-xs font-medium rounded-lg border-2 transition-all ${
-                          position === pos.id
-                            ? "border-red-500 bg-red-50 text-red-700"
-                            : "border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        {pos.label}
+                    {POSITIONS.map(p => (
+                      <button key={p.id} onClick={() => setPosition(p.id)}
+                        className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border-2 transition-all ${position === p.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
+                        {p.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Rotation (only for diagonal) */}
                 {position === "diagonal" && (
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Rotasi: <span className="text-red-600">{rotation}°</span>
-                    </label>
-                    <input type="range" min={0} max={90} value={rotation}
-                      onChange={(e) => setRotation(parseInt(e.target.value))}
-                      className="w-full accent-red-600" />
+                    <label className="label">Rotasi: <span className="text-brand-500">{rotation}°</span></label>
+                    <input type="range" min={0} max={90} value={rotation} onChange={e => setRotation(+e.target.value)} className="w-full accent-brand-500" />
                   </div>
                 )}
-
-                {/* Apply to */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Terapkan ke</label>
-                  <div className="flex gap-2">
-                    {(["all", "odd", "even"] as const).map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setApplyTo(v)}
-                        className={`flex-1 py-2 text-xs font-semibold rounded-lg border-2 transition-all ${
-                          applyTo === v
-                            ? "border-red-500 bg-red-50 text-red-700"
-                            : "border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
+                  <label className="label">Terapkan ke</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {(["all","odd","even"] as const).map(v => (
+                      <button key={v} onClick={() => setApplyTo(v)}
+                        className={`py-1.5 text-xs font-semibold rounded-lg border-2 transition-all ${applyTo === v ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
                         {v === "all" ? "Semua" : v === "odd" ? "Ganjil" : "Genap"}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-
-              <button
-                onClick={handleWatermark}
-                disabled={isProcessing || !watermarkText.trim()}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3 shadow-lg mt-6"
-              >
-                {isProcessing ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</>
-                ) : (
-                  <><Stamp className="w-5 h-5" /> Tambah Watermark</>
-                )}
-              </button>
+              <div className="sidebar-footer space-y-2">
+                <Button onClick={handleApply} loading={processing} disabled={!text.trim()} fullWidth size="lg" icon={<Stamp className="w-5 h-5"/>}>
+                  {processing ? "Memproses…" : "Tambah Watermark"}
+                </Button>
+                <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">Ganti file</Button>
+              </div>
             </div>
           </>
         )}

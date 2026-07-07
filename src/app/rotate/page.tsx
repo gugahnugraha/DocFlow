@@ -9,21 +9,22 @@ import Button from "@/components/Button";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
+const copyAB = (b: ArrayBuffer): ArrayBuffer => b.slice(0);
+
 interface PageState { number: number; rotation: number; selected: boolean }
 
-function PageThumb({ file, page, onCW, onCCW, onToggle }: {
-  file: File; page: PageState; onCW: () => void; onCCW: () => void; onToggle: () => void;
+function PageThumb({ arrayBuffer, page, onCW, onCCW, onToggle }: {
+  arrayBuffer: ArrayBuffer | null; page: PageState; onCW: () => void; onCCW: () => void; onToggle: () => void;
 }) {
   const cvs = useRef<HTMLCanvasElement>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!arrayBuffer) return;
     let alive = true;
     (async () => {
       try {
-        const ab = await file.arrayBuffer();
-        if (!alive) return;
-        const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: copyAB(arrayBuffer) }).promise;
         if (!alive) { pdf.destroy(); return; }
         const p = await pdf.getPage(page.number);
         const vp = p.getViewport({ scale: 0.6, rotation: page.rotation });
@@ -35,7 +36,7 @@ function PageThumb({ file, page, onCW, onCCW, onToggle }: {
       } catch { if (alive) setLoading(false); }
     })();
     return () => { alive = false; };
-  }, [file, page.number, page.rotation]);
+  }, [arrayBuffer, page.number, page.rotation]);
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -68,13 +69,16 @@ function PageThumb({ file, page, onCW, onCCW, onToggle }: {
 
 export default function RotatePage() {
   const [file, setFile] = useState<File | null>(null);
+  const [fileAB, setFileAB] = useState<ArrayBuffer | null>(null);
   const [pages, setPages] = useState<PageState[]>([]);
   const [processing, setProcessing] = useState(false);
 
   const loadFile = useCallback(async (files: File[]) => {
-    const f = files[0]; setFile(f);
+    const f = files[0];
+    setFile(f);
     const ab = await f.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    setFileAB(ab);
+    const pdf = await pdfjsLib.getDocument({ data: ab.slice(0) }).promise;
     setPages(Array.from({ length: pdf.numPages }, (_, i) => ({ number: i + 1, rotation: 0, selected: true })));
     pdf.destroy();
   }, []);
@@ -134,7 +138,7 @@ export default function RotatePage() {
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4">
                 {pages.map((page, i) => (
-                  <PageThumb key={page.number} file={file} page={page}
+                  <PageThumb key={page.number} arrayBuffer={fileAB} page={page}
                     onCW={() => rotate(i, 90)} onCCW={() => rotate(i, 270)} onToggle={() => toggle(i)} />
                 ))}
               </div>
@@ -158,7 +162,7 @@ export default function RotatePage() {
                 <Button onClick={handleRotate} loading={processing} disabled={!hasChanges} fullWidth size="lg" icon={<RotateCw className="w-5 h-5"/>}>
                   {processing ? "Memproses…" : "Rotate PDF"}
                 </Button>
-                <Button onClick={() => { setFile(null); setPages([]); }} variant="ghost" fullWidth size="sm">Ganti file</Button>
+                <Button onClick={() => { setFile(null); setFileAB(null); setPages([]); }} variant="ghost" fullWidth size="sm">Ganti file</Button>
               </div>
             </div>
           </>
