@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Upload, FileType, Loader2, Plus, MoveVertical } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
+import Header from "@/components/Header";
 
 // Setup worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -260,25 +261,7 @@ export default function SplitPage() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-full mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <a href="/" className="flex items-center gap-2 text-2xl font-bold">
-              <span className="text-black">Doc</span>
-              <span className="text-red-600">Flow</span>
-            </a>
-            <div className="hidden md:flex items-center gap-6 ml-8">
-              <a href="/merge" className="text-slate-700 font-semibold hover:text-slate-900">Merge PDF</a>
-              <a href="/split" className="text-red-600 font-semibold border-b-2 border-red-600 pb-1">Split PDF</a>
-              <a href="/compress" className="text-slate-700 font-semibold hover:text-slate-900">Compress PDF</a>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-slate-700 font-semibold hover:text-slate-900">Login</button>
-            <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-semibold transition-colors">Sign up</button>
-          </div>
-        </div>
-      </header>
+      <Header activePath="/split" />
 
       <main className="flex min-h-[calc(100vh-4rem)]">
         {!file ? (

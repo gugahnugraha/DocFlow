@@ -1,279 +1,148 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Upload, FileType, X, Plus } from "lucide-react";
+import { X, Plus, FileType, Loader2 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
+import Header from "@/components/Header";
+import DropZone from "@/components/DropZone";
+import Button from "@/components/Button";
 
-// Setup worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-interface FileWithId {
-  id: string;
-  file: File;
-}
+interface FileItem { id: string; file: File }
 
-// Component for individual file preview
-function FilePreview({ fileItem, onRemove }: { fileItem: FileWithId, onRemove: (id: string) => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const renderTaskRef = useRef<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+function FileThumb({ item, onRemove }: { item: FileItem; onRemove: () => void }) {
+  const cvs = useRef<HTMLCanvasElement>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load preview when component mounts
   useEffect(() => {
-    let isSubscribed = true;
-
-    const loadPreview = async () => {
+    let alive = true;
+    (async () => {
       try {
-        if (!canvasRef.current) return;
-
-        const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as ArrayBuffer);
-          reader.onerror = reject;
-          reader.readAsArrayBuffer(fileItem.file);
-        });
-
-        if (!isSubscribed) return;
-
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        if (!isSubscribed) {
-          pdf.destroy();
-          return;
-        }
-
+        const ab = await item.file.arrayBuffer();
+        if (!alive) return;
+        const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+        if (!alive) { pdf.destroy(); return; }
         const page = await pdf.getPage(1);
-        if (!isSubscribed) {
-          pdf.destroy();
-          return;
-        }
-
-        const scale = 0.75;
-        const viewport = page.getViewport({ scale });
-        const canvas = canvasRef.current!;
-        const context = canvas.getContext("2d");
-        if (!context) return;
-
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        renderTaskRef.current = page.render({ canvasContext: context, viewport });
-        await renderTaskRef.current.promise;
-
-        if (!isSubscribed) {
-          pdf.destroy();
-          return;
-        }
-
-        setIsLoading(false);
+        const vp = page.getViewport({ scale: 0.7 });
+        const c = cvs.current!;
+        c.width = vp.width; c.height = vp.height;
+        await page.render({ canvasContext: c.getContext("2d")!, viewport: vp }).promise;
+        if (alive) setLoading(false);
         pdf.destroy();
-      } catch (err) {
-        if (isSubscribed) {
-          console.error(`Failed to load preview:`, err);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadPreview();
-
-    return () => {
-      isSubscribed = false;
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-      }
-    };
-  }, [fileItem]);
+      } catch { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [item]);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden relative">
-      <button
-        onClick={() => onRemove(fileItem.id)}
-        className="absolute top-2 right-2 w-7 h-7 bg-slate-700 hover:bg-slate-800 text-white rounded-full flex items-center justify-center z-10 transition-colors"
-      >
+    <div className="card group relative flex flex-col overflow-hidden">
+      <button onClick={onRemove}
+        className="absolute top-2 right-2 z-10 w-6 h-6 bg-white border border-[var(--border)] rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 transition-colors shadow-sm">
         <X className="w-3 h-3" />
       </button>
-      <div className="relative aspect-[3/4]">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
-            <div className="w-5 h-5 border-3 border-slate-200 border-t-slate-700 rounded-full animate-spin"></div>
-          </div>
-        )}
-        <canvas
-          ref={canvasRef}
-          className="w-full h-auto"
-          style={{ display: isLoading ? "none" : "block" }}
-        />
+      <div className="bg-slate-50 flex items-center justify-center min-h-[120px] p-2">
+        {loading && <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />}
+        <canvas ref={cvs} className="w-full h-auto" style={{ display: loading ? "none" : "block" }} />
       </div>
-      <div className="px-3 pb-3 pt-2">
-        <p className="text-xs text-slate-700 truncate font-medium">{fileItem.file.name}</p>
+      <div className="p-2 border-t border-[var(--border)]">
+        <p className="text-[11px] text-[var(--text-muted)] truncate font-medium">{item.file.name}</p>
+        <p className="text-[10px] text-[var(--text-subtle)]">{(item.file.size / 1024).toFixed(0)} KB</p>
       </div>
     </div>
   );
 }
 
 export default function MergePage() {
-  const [files, setFiles] = useState<FileWithId[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [processing, setProcessing] = useState(false);
 
-  const onDrop = useCallback((newFiles: File[]) => {
-    const filesWithId: FileWithId[] = newFiles.map((file) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-    }));
-    setFiles((prev) => [...prev, ...filesWithId]);
+  const addFiles = useCallback((newFiles: File[]) => {
+    setFiles(prev => [...prev, ...newFiles.map(f => ({ id: crypto.randomUUID(), file: f }))]);
   }, []);
 
-  const removeFile = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-  };
+  const remove = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
 
   const handleMerge = async () => {
     if (files.length < 2) return;
-
-    setIsProcessing(true);
+    setProcessing(true);
     try {
-      const formData = new FormData();
-      files.forEach((fileItem) => formData.append("files", fileItem.file));
-
-      const response = await fetch("/api/merge", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Gagal merge PDF");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "merged.pdf";
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      alert("Gagal memproses file");
-    } finally {
-      setIsProcessing(false);
-    }
+      const fd = new FormData();
+      files.forEach(f => fd.append("files", f.file));
+      const res = await fetch("/api/merge", { method: "POST", body: fd });
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "merged.pdf"; a.click();
+      URL.revokeObjectURL(url);
+    } catch { alert("Gagal memproses file"); }
+    finally { setProcessing(false); }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-full mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <a href="/" className="flex items-center gap-2 text-2xl font-bold">
-              <span className="text-black">Doc</span>
-              <span className="text-red-600">Flow</span>
-            </a>
-            <div className="hidden md:flex items-center gap-6 ml-8">
-              <a href="/merge" className="text-red-600 font-semibold border-b-2 border-red-600 pb-1">Merge PDF</a>
-              <a href="/split" className="text-slate-700 font-semibold hover:text-slate-900">Split PDF</a>
-              <a href="/compress" className="text-slate-700 font-semibold hover:text-slate-900">Compress PDF</a>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-slate-700 font-semibold hover:text-slate-900">Login</button>
-            <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-semibold transition-colors">Sign up</button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex min-h-[calc(100vh-4rem)]">
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+      <Header activePath="/merge" />
+      <main className="flex min-h-[calc(100vh-60px)]">
         {files.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="bg-white rounded-2xl p-10 shadow-sm max-w-md w-full">
-                <div className="bg-red-50 w-20 h-20 rounded-xl flex items-center justify-center mx-auto mb-6">
-                  <FileType className="w-10 h-10 text-red-600" />
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="w-full max-w-lg">
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <FileType className="w-7 h-7 text-brand-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-3">Pilih file PDF</h2>
-                <p className="text-slate-500 mb-8">Gabungkan beberapa file PDF menjadi satu dokumen</p>
-                
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    multiple
-                    onChange={(e) => e.target.files && onDrop(Array.from(e.target.files))}
-                    className="hidden"
-                  />
-                  <div className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-3">
-                    <Upload className="w-6 h-6" />
-                    Pilih File PDF
-                  </div>
-                </label>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Merge PDF</h1>
+                <p className="text-sm text-[var(--text-muted)]">Gabungkan beberapa file PDF menjadi satu dokumen</p>
               </div>
+              <DropZone onFiles={addFiles} accept="application/pdf" multiple />
             </div>
           </div>
         ) : (
           <>
-            <div className="flex-1 p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {files.map((fileItem) => (
-                  <FilePreview
-                    key={fileItem.id}
-                    fileItem={fileItem}
-                    onRemove={removeFile}
-                  />
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                {files.map(item => (
+                  <FileThumb key={item.id} item={item} onRemove={() => remove(item.id)} />
                 ))}
                 <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    multiple
-                    onChange={(e) => e.target.files && onDrop(Array.from(e.target.files))}
-                    className="hidden"
-                  />
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center hover:border-red-400 hover:bg-red-50 transition-colors aspect-[3/4]">
-                    <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mb-2">
-                      <Plus className="w-6 h-6 text-white" />
+                  <input type="file" accept="application/pdf" multiple onChange={e => e.target.files && addFiles(Array.from(e.target.files))} className="hidden" />
+                  <div className="flex flex-col items-center justify-center min-h-[140px] rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-brand-300 hover:bg-brand-50/30 transition-colors text-[var(--text-subtle)] gap-2">
+                    <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-sm font-semibold text-slate-600">Tambah file</span>
+                    <span className="text-xs font-semibold">Tambah</span>
                   </div>
                 </label>
               </div>
             </div>
 
-            <div className="w-80 bg-white border-l border-slate-200 p-6 flex flex-col">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Merge PDF</h2>
-              
-              <div className="flex-1">
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+            <div className="sidebar">
+              <div className="sidebar-header">
+                <h2 className="font-bold text-[var(--text)] text-lg">Merge PDF</h2>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">{files.length} file dipilih</p>
+              </div>
+              <div className="sidebar-body">
+                <div className="card p-3 bg-blue-50 border-blue-100">
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    Seret untuk mengubah urutan file, atau klik <strong>Tambah</strong> untuk menambah lebih banyak file PDF.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  {files.map((f, i) => (
+                    <div key={f.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[var(--bg)] transition-colors">
+                      <span className="text-xs font-bold text-brand-500 w-5">{i + 1}</span>
+                      <p className="text-xs text-[var(--text)] truncate flex-1">{f.file.name}</p>
+                      <button onClick={() => remove(f.id)} className="text-[var(--text-subtle)] hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
                     </div>
-                    <p className="text-sm text-slate-700">
-                      <span className="font-semibold">Please, select more PDF files</span> by clicking again on 'Select PDF files'. Select multiple files by maintaining pressed 'Ctrl'.
-                    </p>
-                  </div>
+                  ))}
                 </div>
               </div>
-
-              <button
-                onClick={handleMerge}
-                disabled={isProcessing || files.length < 2}
-                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-xl transition-colors flex items-center justify-center gap-3 shadow-lg"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    Merge PDF
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </>
-                )}
-              </button>
+              <div className="sidebar-footer">
+                <Button onClick={handleMerge} loading={processing} disabled={files.length < 2} fullWidth size="lg"
+                  icon={<FileType className="w-5 h-5" />}>
+                  {processing ? "Memproses…" : "Merge PDF"}
+                </Button>
+                {files.length < 2 && <p className="text-xs text-center text-[var(--text-subtle)] mt-2">Minimal 2 file diperlukan</p>}
+              </div>
             </div>
           </>
         )}
