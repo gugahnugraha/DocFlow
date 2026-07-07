@@ -9,7 +9,8 @@ import {
   Scissors, 
   Upload,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  Pencil
 } from "lucide-react";
 
 const tools = [
@@ -33,6 +34,13 @@ const tools = [
     description: "Perkecil ukuran file PDF",
     icon: <FileText className="w-8 h-8 text-amber-600" />,
     color: "bg-amber-50",
+  },
+  {
+    id: "edit",
+    title: "Edit PDF",
+    description: "Tambahkan teks, highlight, dan anotasi",
+    icon: <Pencil className="w-8 h-8 text-red-600" />,
+    color: "bg-red-50",
   },
   {
     id: "pdf-to-word",
