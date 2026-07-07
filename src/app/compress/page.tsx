@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Upload, FileType, Loader2, FileText } from "lucide-react";
+import { Upload, FileType } from "lucide-react";
+import PdfPreview from "@/components/PdfPreview";
 
 export default function CompressPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -96,11 +97,11 @@ export default function CompressPage() {
         ) : (
           <>
             <div className="flex-1 p-6 flex items-center justify-center">
-              <div className="bg-white rounded-xl shadow-sm p-4 max-w-xs">
-                <div className="aspect-[3/4] bg-slate-100 rounded-lg mb-2 flex items-center justify-center">
-                  <FileType className="w-16 h-16 text-slate-400" />
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden max-w-xs">
+                <PdfPreview file={file} pageNumber={1} />
+                <div className="px-3 pb-3">
+                  <p className="text-xs text-slate-700 truncate font-medium">{file.name}</p>
                 </div>
-                <p className="text-sm text-slate-600 truncate font-medium text-center">{file.name}</p>
               </div>
             </div>
 
@@ -132,7 +133,7 @@ export default function CompressPage() {
                           quality === option.id ? "border-red-600 bg-white" : "border-slate-300"
                         }`}>
                           {quality === option.id && (
-                            <div className="w-4 h-4 bg-red-600 rounded-full" />
+                            <div className="w-4 h-4 bg-red-600 rounded-full"></div>
                           )}
                         </div>
                       </div>
@@ -173,7 +174,7 @@ export default function CompressPage() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                     Memproses...
                   </>
                 ) : (

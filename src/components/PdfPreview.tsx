@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 
-// Set worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Setup worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface PdfPreviewProps {
   file: File;
@@ -15,11 +15,13 @@ interface PdfPreviewProps {
 
 export default function PdfPreview({ file, pageNumber, onPageLoad, className = "" }: PdfPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderTaskRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isSubscribed = true;
+    let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
 
     const renderPage = async () => {
       if (!file || !canvasRef.current) return;
@@ -28,13 +30,24 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
         setIsLoading(true);
         setError(null);
 
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        
+        // Baca file sekali dan simpan reference
+        if (!pdfDoc) {
+          const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as ArrayBuffer);
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+          });
+          pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        }
+
+        if (!isSubscribed || !pdfDoc) return;
+
+        const page = await pdfDoc.getPage(pageNumber);
         if (!isSubscribed) return;
 
-        const page = await pdf.getPage(pageNumber);
-        const scale = 1.5;
+        // Kurangi scale untuk performance
+        const scale = 0.75;
         const viewport = page.getViewport({ scale });
         
         const canvas = canvasRef.current;
@@ -44,23 +57,29 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
+        // Simpan task render untuk bisa di-cancel
         const renderContext = {
           canvasContext: context,
           viewport: viewport,
         };
         
-        await page.render(renderContext).promise;
+        renderTaskRef.current = page.render(renderContext);
+        await renderTaskRef.current.promise;
         
-        if (onPageLoad) {
+        if (onPageLoad && isSubscribed) {
           const url = canvas.toDataURL("image/png");
           onPageLoad(url);
         }
         
-        setIsLoading(false);
+        if (isSubscribed) {
+          setIsLoading(false);
+        }
       } catch (err) {
-        console.error("Error loading PDF:", err);
-        setError("Gagal memuat preview PDF");
-        setIsLoading(false);
+        if (err instanceof Error && err.name !== "RenderingCancelledException" && isSubscribed) {
+          console.error("Error loading PDF:", err);
+          setError("Gagal memuat preview PDF");
+          setIsLoading(false);
+        }
       }
     };
 
@@ -68,13 +87,21 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
 
     return () => {
       isSubscribed = false;
+      // Cancel ongoing render
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+      // Cleanup PDF document
+      if (pdfDoc) {
+        pdfDoc.destroy();
+      }
     };
   }, [file, pageNumber, onPageLoad]);
 
   return (
     <div className={`${className} relative`}>
       {error && (
-        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200">
+        <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-200 text-sm">
           {error}
         </div>
       )}
@@ -82,7 +109,7 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
       <div className="relative bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
-            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+            <div className="w-5 h-5 border-3 border-slate-200 border-t-slate-700 rounded-full animate-spin"></div>
           </div>
         )}
         <canvas

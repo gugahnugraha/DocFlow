@@ -1,25 +1,124 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Upload, FilePlus, Loader2, FileType, X, Plus } from "lucide-react";
+import { Upload, FileType, X, Plus } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Setup worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-interface FileWithPages extends File {
+interface FileWithId {
   id: string;
-  pages?: { canvas: HTMLCanvasElement; pageNum: number }[];
+  file: File;
+}
+
+// Component for individual file preview
+function FilePreview({ fileItem, onRemove }: { fileItem: FileWithId, onRemove: (id: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderTaskRef = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load preview when component mounts
+  useEffect(() => {
+    let isSubscribed = true;
+
+    const loadPreview = async () => {
+      try {
+        if (!canvasRef.current) return;
+
+        const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as ArrayBuffer);
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(fileItem.file);
+        });
+
+        if (!isSubscribed) return;
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        if (!isSubscribed) {
+          pdf.destroy();
+          return;
+        }
+
+        const page = await pdf.getPage(1);
+        if (!isSubscribed) {
+          pdf.destroy();
+          return;
+        }
+
+        const scale = 0.75;
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current!;
+        const context = canvas.getContext("2d");
+        if (!context) return;
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        renderTaskRef.current = page.render({ canvasContext: context, viewport });
+        await renderTaskRef.current.promise;
+
+        if (!isSubscribed) {
+          pdf.destroy();
+          return;
+        }
+
+        setIsLoading(false);
+        pdf.destroy();
+      } catch (err) {
+        if (isSubscribed) {
+          console.error(`Failed to load preview:`, err);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      isSubscribed = false;
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+    };
+  }, [fileItem]);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden relative">
+      <button
+        onClick={() => onRemove(fileItem.id)}
+        className="absolute top-2 right-2 w-7 h-7 bg-slate-700 hover:bg-slate-800 text-white rounded-full flex items-center justify-center z-10 transition-colors"
+      >
+        <X className="w-3 h-3" />
+      </button>
+      <div className="relative aspect-[3/4]">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
+            <div className="w-5 h-5 border-3 border-slate-200 border-t-slate-700 rounded-full animate-spin"></div>
+          </div>
+        )}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-auto"
+          style={{ display: isLoading ? "none" : "block" }}
+        />
+      </div>
+      <div className="px-3 pb-3 pt-2">
+        <p className="text-xs text-slate-700 truncate font-medium">{fileItem.file.name}</p>
+      </div>
+    </div>
+  );
 }
 
 export default function MergePage() {
-  const [files, setFiles] = useState<FileWithPages[]>([]);
+  const [files, setFiles] = useState<FileWithId[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const onDrop = useCallback((newFiles: File[]) => {
-    const filesWithId: FileWithPages[] = newFiles.map((file) => ({
-      ...file,
+    const filesWithId: FileWithId[] = newFiles.map((file) => ({
       id: Math.random().toString(36).substr(2, 9),
+      file,
     }));
     setFiles((prev) => [...prev, ...filesWithId]);
   }, []);
@@ -34,7 +133,7 @@ export default function MergePage() {
     setIsProcessing(true);
     try {
       const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
+      files.forEach((fileItem) => formData.append("files", fileItem.file));
 
       const response = await fetch("/api/merge", {
         method: "POST",
@@ -95,7 +194,6 @@ export default function MergePage() {
                 
                 <label className="cursor-pointer">
                   <input
-                    ref={fileInputRef}
                     type="file"
                     accept="application/pdf"
                     multiple
@@ -114,19 +212,12 @@ export default function MergePage() {
           <>
             <div className="flex-1 p-6">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {files.map((file) => (
-                  <div key={file.id} className="bg-white rounded-xl shadow-sm p-3 relative">
-                    <button
-                      onClick={() => removeFile(file.id)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-800 z-10"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                    <div className="aspect-[3/4] bg-slate-100 rounded-lg mb-2 flex items-center justify-center">
-                      <FileType className="w-12 h-12 text-slate-400" />
-                    </div>
-                    <p className="text-xs text-slate-600 truncate font-medium">{file.name}</p>
-                  </div>
+                {files.map((fileItem) => (
+                  <FilePreview
+                    key={fileItem.id}
+                    fileItem={fileItem}
+                    onRemove={removeFile}
+                  />
                 ))}
                 <label className="cursor-pointer">
                   <input
@@ -136,7 +227,7 @@ export default function MergePage() {
                     onChange={(e) => e.target.files && onDrop(Array.from(e.target.files))}
                     className="hidden"
                   />
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center hover:border-red-400 hover:bg-red-50 transition-colors aspect-square">
+                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center hover:border-red-400 hover:bg-red-50 transition-colors aspect-[3/4]">
                     <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mb-2">
                       <Plus className="w-6 h-6 text-white" />
                     </div>
@@ -171,7 +262,7 @@ export default function MergePage() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                     Memproses...
                   </>
                 ) : (

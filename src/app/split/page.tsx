@@ -1,19 +1,151 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Upload, FileType, Loader2, Scissors, Plus, MoveVertical } from "lucide-react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Upload, FileType, Loader2, Plus, MoveVertical } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Setup worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 interface PageData {
   number: number;
   selected: boolean;
+  previewUrl?: string;
 }
 
 interface RangeData {
   from: number;
   to: number;
+}
+
+// Simple component for previewing individual page
+function PdfPagePreview({ 
+  file, 
+  pageNumber, 
+  small = false, 
+  selected = false, 
+  onToggleSelect 
+}: {
+  file: File,
+  pageNumber: number,
+  small?: boolean,
+  selected?: boolean,
+  onToggleSelect?: () => void
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderTaskRef = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load preview when component mounts
+  useEffect(() => {
+    if (!file) return;
+
+    let isSubscribed = true;
+    let pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+
+    const loadPreview = async () => {
+      try {
+        // Read file
+        const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as ArrayBuffer);
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(file);
+        });
+
+        if (!isSubscribed) return;
+
+        pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        if (!isSubscribed) {
+          pdfDoc.destroy();
+          return;
+        }
+
+        const page = await pdfDoc.getPage(pageNumber);
+        if (!isSubscribed) {
+          pdfDoc.destroy();
+          return;
+        }
+
+        const scale = small ? 0.5 : 0.75;
+        const viewport = page.getViewport({ scale });
+        
+        // Wait for canvas to be ready
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        
+        const context = canvas.getContext("2d");
+        if (!context) return;
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        renderTaskRef.current = page.render({ canvasContext: context, viewport });
+        await renderTaskRef.current.promise;
+
+        if (!isSubscribed) {
+          if (pdfDoc) pdfDoc.destroy();
+          return;
+        }
+
+        setIsLoading(false);
+        if (pdfDoc) pdfDoc.destroy();
+      } catch (err) {
+        if (isSubscribed) {
+          console.error(`Failed to load page ${pageNumber}:`, err);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      isSubscribed = false;
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+      if (pdfDoc) {
+        pdfDoc.destroy();
+      }
+    };
+  }, [file, pageNumber, small]);
+
+  return (
+    <div 
+      className={`relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden cursor-pointer ${
+        small ? 'w-32' : ''
+      } ${selected ? 'ring-2 ring-green-500 ring-offset-2' : 'hover:ring-2 hover:ring-slate-300 hover:ring-offset-2'}`}
+      onClick={onToggleSelect}
+    >
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
+          <div className="w-5 h-5 border-3 border-slate-200 border-t-slate-700 rounded-full animate-spin"></div>
+        </div>
+      )}
+      {onToggleSelect && (
+        <div className="absolute top-3 left-3 z-20">
+          <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+            selected ? 'bg-green-500 border-green-500' : 'bg-white border-slate-300 hover:border-slate-400'
+          }`}>
+            {selected && (
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-auto"
+        style={{ display: isLoading ? 'none' : 'block' }}
+      />
+      <div className="bg-white py-2 text-center border-t border-slate-200">
+        <span className="text-sm font-medium text-slate-700">{pageNumber}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function SplitPage() {
@@ -24,14 +156,25 @@ export default function SplitPage() {
   const [rangeMode, setRangeMode] = useState<"custom" | "fixed" | "smart">("custom");
   const [ranges, setRanges] = useState<RangeData[]>([{ from: 1, to: 1 }]);
   const [mergeAll, setMergeAll] = useState(false);
+  
+  // Pages mode specific state
+  const [extractMode, setExtractMode] = useState<"all" | "select">("select");
+  const [pagesToExtract, setPagesToExtract] = useState("");
 
   const onDrop = useCallback(async (selectedFile: File) => {
     setFile(selectedFile);
     
-    // Load PDF to get total pages
-    const arrayBuffer = await selectedFile.arrayBuffer();
+    // Read file to get total pages
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(selectedFile);
+    });
+
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const totalPages = pdf.numPages;
+    pdf.destroy();
     
     const newPages: PageData[] = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -41,18 +184,29 @@ export default function SplitPage() {
     
     // Set initial range
     setRanges([{ from: 1, to: totalPages }]);
+    
+    // Set initial pages to extract
+    setPagesToExtract(`1-${totalPages}`);
+  }, []);
+
+  const togglePage = useCallback((pageNum: number) => {
+    setPages(prev => prev.map(p => 
+      p.number === pageNum ? { ...p, selected: !p.selected } : p
+    ));
   }, []);
 
   const addRange = () => {
     const lastRange = ranges[ranges.length - 1];
     const newFrom = lastRange.to + 1;
     const newTo = Math.min(newFrom, pages.length);
-    setRanges([...ranges, { from: newFrom, to: newTo }]);
+    if (newFrom <= pages.length) {
+      setRanges([...ranges, { from: newFrom, to: newTo }]);
+    }
   };
 
   const updateRange = (index: number, field: "from" | "to", value: number) => {
     const newRanges = [...ranges];
-    newRanges[index][field] = value;
+    newRanges[index][field] = Math.max(1, Math.min(value, pages.length));
     setRanges(newRanges);
   };
 
@@ -63,7 +217,15 @@ export default function SplitPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("ranges", JSON.stringify(ranges));
+      
+      if (splitMode === "pages") {
+        formData.append("extractMode", extractMode);
+        formData.append("pagesToExtract", JSON.stringify(
+          extractMode === "select" ? pages.filter(p => p.selected).map(p => p.number) : "all"
+        ));
+      } else {
+        formData.append("ranges", JSON.stringify(ranges));
+      }
       formData.append("mergeAll", mergeAll.toString());
 
       const response = await fetch("/api/split", {
@@ -89,6 +251,12 @@ export default function SplitPage() {
       setIsProcessing(false);
     }
   };
+
+  // Calculate how many PDFs will be created
+  const selectedPagesCount = pages.filter(p => p.selected).length;
+  const pdfsToCreate = splitMode === "pages"
+    ? (mergeAll ? 1 : selectedPagesCount)
+    : (mergeAll ? 1 : ranges.length);
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -140,38 +308,55 @@ export default function SplitPage() {
           </div>
         ) : (
           <>
-            <div className="flex-1 p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {pages.map((page) => (
-                  <div
-                    key={page.number}
-                    className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all ${
-                      page.selected ? "border-green-500" : "border-transparent hover:border-slate-300"
-                    }`}
-                    onClick={() => setPages(prev => prev.map(p => p.number === page.number ? { ...p, selected: !p.selected } : p))}
-                  >
-                    {page.selected && (
-                      <div className="absolute top-2 left-2 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center z-10 shadow-md">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="aspect-[3/4] bg-white p-3">
-                      <div className="w-full h-full border border-slate-200 rounded flex items-center justify-center bg-slate-50">
-                        <span className="text-4xl font-light text-slate-400">{page.number}</span>
+            <div className="flex-1 p-6 overflow-y-auto">
+              {splitMode === "range" ? (
+                // Visualisasi ranges (seperti ilovePDF)
+                <div className="flex flex-col items-center gap-8">
+                  {ranges.map((range, index) => (
+                    <div key={index} className="flex flex-col items-center gap-4">
+                      <div className="text-lg font-semibold text-slate-700">Range {index + 1}</div>
+                      <div className="flex items-center gap-4 p-6 border-2 border-dashed border-slate-300 rounded-xl bg-white">
+                        {/* Preview first page of range */}
+                        {file && range.from <= pages.length && (
+                          <PdfPagePreview file={file} pageNumber={range.from} small />
+                        )}
+                        
+                        {/* Dots separator if more than 1 page */}
+                        {range.to > range.from && (
+                          <div className="text-slate-400 text-xl font-bold">• • •</div>
+                        )}
+                        
+                        {/* Preview last page of range if different from first */}
+                        {file && range.to > range.from && range.to <= pages.length && (
+                          <PdfPagePreview file={file} pageNumber={range.to} small />
+                        )}
                       </div>
                     </div>
-                    <div className="bg-white py-2 text-center">
-                      <span className="text-sm font-medium text-slate-700">{page.number}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : splitMode === "pages" ? (
+                // Visualisasi semua halaman (untuk mode Pages)
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {pages.map((page) => (
+                    <PdfPagePreview
+                      key={page.number}
+                      file={file}
+                      pageNumber={page.number}
+                      selected={page.selected}
+                      onToggleSelect={extractMode === "select" ? () => togglePage(page.number) : undefined}
+                    />
+                  ))}
+                </div>
+              ) : (
+                // Placeholder untuk mode Size
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-slate-500 text-lg">Size mode will be available soon</div>
+                </div>
+              )}
             </div>
 
-            <div className="w-80 bg-white border-l border-slate-200 p-6 flex flex-col">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Split</h2>
+            <div className="w-80 bg-white border-l border-slate-200 p-6 flex flex-col overflow-y-auto">
+              <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Split PDF</h2>
               
               <div className="flex mb-6 border-b border-slate-200">
                 {([
@@ -286,6 +471,47 @@ export default function SplitPage() {
                     )}
                   </>
                 )}
+
+                {splitMode === "pages" && (
+                  <>
+                    <h3 className="font-bold text-lg text-slate-800 mb-4">Extract mode:</h3>
+                    <div className="flex gap-3 mb-6">
+                      {(["all", "select"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => {
+                            setExtractMode(mode);
+                            if (mode === "all") {
+                              setPages(prev => prev.map(p => ({ ...p, selected: true })));
+                            }
+                          }}
+                          className={`flex-1 py-2 px-3 border-2 rounded-xl font-semibold transition-all ${
+                            extractMode === mode
+                              ? "border-red-500 text-red-600 bg-red-50"
+                              : "border-slate-200 text-slate-500 hover:border-slate-300"
+                          }`}
+                        >
+                          <span className="capitalize">
+                            {mode === "all" ? "Extract all pages" : "Select pages"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {extractMode === "select" && (
+                      <div className="mb-6">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Pages to extract:</label>
+                        <input
+                          type="text"
+                          placeholder="example: 1,5-8"
+                          value={pagesToExtract}
+                          onChange={(e) => setPagesToExtract(e.target.value)}
+                          className="w-full px-3 py-3 border border-slate-300 rounded-lg text-slate-700"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
                 
                 <div className="mt-6 pt-6 border-t border-slate-200">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -295,8 +521,27 @@ export default function SplitPage() {
                       onChange={(e) => setMergeAll(e.target.checked)}
                       className="w-5 h-5 border-2 border-slate-300 rounded"
                     />
-                    <span className="text-slate-700">Merge all ranges in one PDF file.</span>
+                    <span className="text-slate-700">
+                      {splitMode === "pages"
+                        ? "Merge extracted pages into one PDF file."
+                        : "Merge all ranges into one PDF file."
+                      }
+                    </span>
                   </label>
+                  
+                  {/* Info box about PDFs to create */}
+                  <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-slate-700">
+                        {splitMode === "pages" ? "Selected pages will be converted into" : "Selected ranges will be converted into"} separate PDF files. <span className="font-bold text-black">{pdfsToCreate} PDF</span> will be created.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
