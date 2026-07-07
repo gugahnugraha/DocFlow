@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { splitPDF } from "@/lib/pdf";
+import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const splitAtStr = formData.get("splitAt") as string;
+    const rangesStr = formData.get("ranges") as string;
+    const mergeAllStr = formData.get("mergeAll") as string;
 
     if (!file) {
       return NextResponse.json(
@@ -16,25 +17,45 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const splitAt = splitAtStr
-      ? splitAtStr.split(",").map((s) => parseInt(s.trim()))
-      : [];
+    const pdf = await PDFDocument.load(buffer);
+    const ranges = JSON.parse(rangesStr);
+    const mergeAll = mergeAllStr === "true";
 
-    const pdfs = await splitPDF(buffer, splitAt);
-
-    const zip = new JSZip();
-    pdfs.forEach((pdf, index) => {
-      zip.file(`split_${index + 1}.pdf`, pdf);
-    });
-
-    const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
-
-    return new NextResponse(zipBuffer, {
-      headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": 'attachment; filename="split.zip"',
-      },
-    });
+    if (mergeAll) {
+      const mergedPdf = await PDFDocument.create();
+      for (const range of ranges) {
+        for (let pageNum = range.from; pageNum <= range.to; pageNum++) {
+          const [copiedPage] = await mergedPdf.copyPages(pdf, [pageNum - 1]);
+          mergedPdf.addPage(copiedPage);
+        }
+      }
+      const pdfBytes = await mergedPdf.save();
+      return new NextResponse(Buffer.from(pdfBytes), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": 'attachment; filename="split.pdf"',
+        },
+      });
+    } else {
+      const zip = new JSZip();
+      for (let i = 0; i < ranges.length; i++) {
+        const range = ranges[i];
+        const newPdf = await PDFDocument.create();
+        for (let pageNum = range.from; pageNum <= range.to; pageNum++) {
+          const [copiedPage] = await newPdf.copyPages(pdf, [pageNum - 1]);
+          newPdf.addPage(copiedPage);
+        }
+        const pdfBytes = await newPdf.save();
+        zip.file(`split_part_${i + 1}.pdf`, pdfBytes);
+      }
+      const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+      return new NextResponse(zipBuffer, {
+        headers: {
+          "Content-Type": "application/zip",
+          "Content-Disposition": 'attachment; filename="split.zip"',
+        },
+      });
+    }
   } catch (error) {
     console.error(error);
     return NextResponse.json(
