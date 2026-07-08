@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 // Setup worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -14,6 +15,7 @@ interface PdfPreviewProps {
 }
 
 export default function PdfPreview({ file, pageNumber, onPageLoad, className = "" }: PdfPreviewProps) {
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderTaskRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +79,7 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
       } catch (err) {
         if (err instanceof Error && err.name !== "RenderingCancelledException" && isSubscribed) {
           console.error("Error loading PDF:", err);
-          setError("Gagal memuat preview PDF");
+          setError(t.components.pdfPreview.error);
           setIsLoading(false);
         }
       }
@@ -96,7 +98,7 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
         pdfDoc.destroy();
       }
     };
-  }, [file, pageNumber, onPageLoad]);
+  }, [file, pageNumber, onPageLoad, t]);
 
   return (
     <div className={`${className} relative`}>
@@ -106,9 +108,9 @@ export default function PdfPreview({ file, pageNumber, onPageLoad, className = "
         </div>
       )}
 
-      <div className="relative bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <div className="relative bg-white/60 backdrop-blur-xl rounded-xl shadow-[0_16px_40px_-28px_rgba(15,23,42,0.5)] border border-white/35 overflow-hidden">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-xl z-10">
             <div className="w-5 h-5 border-3 border-slate-200 border-t-slate-700 rounded-full animate-spin"></div>
           </div>
         )}

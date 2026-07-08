@@ -2,6 +2,7 @@
 
 import { useCallback, useState, useRef } from "react";
 import { Upload, FileText, X, AlertCircle } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface DropZoneProps {
   /** Called when valid file(s) are dropped or selected */
@@ -32,7 +33,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function FileChip({ file, onRemove }: { file: File; onRemove?: () => void }) {
+function FileChip({ file, onRemove, removeAriaLabel }: { file: File; onRemove?: () => void; removeAriaLabel: string }) {
   return (
     <div className="flex items-center gap-2.5 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl px-3 py-2 text-sm animate-fade-in">
       <div className="w-7 h-7 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -46,7 +47,7 @@ function FileChip({ file, onRemove }: { file: File; onRemove?: () => void }) {
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           className="w-5 h-5 rounded-full bg-orange-200/60 hover:bg-orange-300 text-orange-700 flex items-center justify-center transition-colors flex-shrink-0"
-          aria-label="Hapus file"
+          aria-label={removeAriaLabel}
         >
           <X className="w-3 h-3" />
         </button>
@@ -67,6 +68,7 @@ export default function DropZone({
   className = "",
   disabled = false,
 }: DropZoneProps) {
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,29 +77,34 @@ export default function DropZone({
   const isImage = accept.includes("image");
 
   const defaultLabel = isPdf
-    ? "Letakkan file PDF di sini"
+    ? t.components.dropzone.labelPdf
     : isImage
-    ? "Letakkan gambar di sini"
-    : "Letakkan file di sini";
+    ? t.components.dropzone.labelImage
+    : t.components.dropzone.labelGeneric;
 
   const defaultSublabel = isPdf
-    ? "atau klik untuk memilih file PDF"
+    ? t.components.dropzone.sublabelPdf
     : isImage
-    ? "JPG, PNG, WebP — atau klik untuk memilih"
-    : "atau klik untuk memilih file";
+    ? t.components.dropzone.sublabelImage
+    : t.components.dropzone.sublabelGeneric;
 
   const validate = useCallback(
     (rawFiles: File[]): { valid: File[]; error: string | null } => {
       const valid: File[] = [];
       for (const f of rawFiles) {
         if (f.size > maxSize) {
-          return { valid: [], error: `File "${f.name}" melebihi batas ukuran ${formatBytes(maxSize)}` };
+          return {
+            valid: [],
+            error: t.common.errors.fileTooLarge
+              .replace("{name}", f.name)
+              .replace("{max}", formatBytes(maxSize)),
+          };
         }
         valid.push(f);
       }
       return { valid, error: null };
     },
-    [maxSize]
+    [maxSize, t]
   );
 
   const handleFiles = useCallback(
@@ -174,7 +181,7 @@ export default function DropZone({
 
         <div className="space-y-1 pointer-events-none">
           <p className="text-base font-semibold text-[var(--text)]">
-            {isDragOver ? "Lepaskan file di sini" : (label || defaultLabel)}
+            {isDragOver ? t.components.dropzone.releaseHere : (label || defaultLabel)}
           </p>
           <p className="text-sm text-[var(--text-subtle)]">
             {sublabel || defaultSublabel}
@@ -191,7 +198,7 @@ export default function DropZone({
               <span className="badge badge-brand">WebP</span>
             </>
           )}
-          <span className="text-xs text-[var(--text-subtle)]">maks. {formatBytes(maxSize)}</span>
+          <span className="text-xs text-[var(--text-subtle)]">{t.components.dropzone.maxPrefix} {formatBytes(maxSize)}</span>
         </div>
       </div>
 
@@ -210,6 +217,7 @@ export default function DropZone({
             <FileChip
               key={`${f.name}-${i}`}
               file={f}
+              removeAriaLabel={t.common.aria.removeFile}
               onRemove={onRemove ? () => onRemove(i) : undefined}
             />
           ))}

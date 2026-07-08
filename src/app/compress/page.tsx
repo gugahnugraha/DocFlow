@@ -8,17 +8,19 @@ import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
 import PdfPreview from "@/components/PdfPreview";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
-const QUALITY_OPTIONS = [
-  { id: "recommended", label: "Direkomendasikan", desc: "Kualitas bagus, kompresi terbaik", color: "#059669", bg: "#ecfdf5", size: "~74%" },
-  { id: "low",         label: "Sedang",           desc: "Kualitas cukup, kompresi tinggi",  color: "#0284c7", bg: "#e0f2fe", size: "~60%" },
-  { id: "extreme",     label: "Maksimal",          desc: "Kualitas minimal, ukuran terkecil", color: "#e64809", bg: "#fff2ee", size: "~88%" },
-] as const;
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function CompressPage() {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [quality, setQuality] = useState<typeof QUALITY_OPTIONS[number]["id"]>("recommended");
+  const [quality, setQuality] = useState<"recommended" | "low" | "extreme">("recommended");
+
+  const QUALITY_OPTIONS = [
+    { id: "recommended", label: t.pages.compress.quality.recommended.label, desc: t.pages.compress.quality.recommended.desc, color: "#059669", bg: "#ecfdf5", size: "~74%" },
+    { id: "low",         label: t.pages.compress.quality.low.label,         desc: t.pages.compress.quality.low.desc,         color: "#0284c7", bg: "#e0f2fe", size: "~60%" },
+    { id: "extreme",     label: t.pages.compress.quality.extreme.label,     desc: t.pages.compress.quality.extreme.desc,     color: "#e64809", bg: "#fff2ee", size: "~88%" },
+  ] as const;
 
   const loadFile = useCallback((files: File[]) => setFile(files[0]), []);
 
@@ -34,7 +36,7 @@ export default function CompressPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = "compressed.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch { alert("Gagal memproses file"); }
+    } catch { alert(t.common.errors.processingFailed); }
     finally { setProcessing(false); }
   };
 
@@ -50,18 +52,18 @@ export default function CompressPage() {
                   <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <FileText className="w-8 h-8 text-brand-500" />
                   </div>
-                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Compress PDF</h1>
-                  <p className="text-sm text-[var(--text-muted)]">Perkecil ukuran file PDF tanpa kehilangan kualitas</p>
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">{t.pages.compress.title}</h1>
+                  <p className="text-sm text-[var(--text-muted)]">{t.pages.compress.subtitle}</p>
                 </div>
                 <DropZone onFiles={loadFile} accept="application/pdf" />
                 <div className="mt-5 grid grid-cols-4 gap-2">
                   {[
-                    { icon: <FileText className="w-4 h-4" />, label: "Pilih File" },
-                    { icon: <FileText className="w-4 h-4" />, label: "Direkomendasikan" },
-                    { icon: <FileText className="w-4 h-4" />, label: "Sedang" },
-                    { icon: <FileText className="w-4 h-4" />, label: "Maksimal" },
+                    { icon: <FileText className="w-4 h-4" />, label: t.pages.compress.steps.select },
+                    { icon: <FileText className="w-4 h-4" />, label: t.pages.compress.steps.recommended },
+                    { icon: <FileText className="w-4 h-4" />, label: t.pages.compress.steps.medium },
+                    { icon: <FileText className="w-4 h-4" />, label: t.pages.compress.steps.extreme },
                   ].map(f => (
-                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <div key={f.label} className="card flex flex-col items-center gap-1.5 p-3 text-center">
                       <span className="text-brand-500">{f.icon}</span>
                       <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
                     </div>
@@ -83,15 +85,15 @@ export default function CompressPage() {
 
               <div className="sidebar">
                 <div className="sidebar-header">
-                  <h2 className="font-bold text-[var(--text)] text-lg">Compress PDF</h2>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Pilih level kompresi</p>
+                  <h2 className="font-bold text-[var(--text)] text-lg">{t.pages.compress.title}</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{t.pages.compress.chooseLevel}</p>
                 </div>
                 <div className="sidebar-body">
                   <div className="space-y-2">
                     {QUALITY_OPTIONS.map(opt => (
                       <label key={opt.id}
                         className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
-                          quality === opt.id ? "border-brand-500 bg-brand-50" : "border-[var(--border)] bg-white hover:border-brand-200"
+                          quality === opt.id ? "border-brand-500 bg-brand-50" : "border-white/35 bg-white/45 backdrop-blur-xl hover:border-brand-200"
                         }`}>
                         <input type="radio" name="quality" value={opt.id} checked={quality === opt.id}
                           onChange={() => setQuality(opt.id)} className="mt-0.5 accent-brand-500 w-4 h-4 flex-shrink-0" />
@@ -110,18 +112,18 @@ export default function CompressPage() {
                   </div>
                   <div className="card p-3 bg-blue-50 border-blue-100">
                     <p className="text-xs text-blue-700 leading-relaxed">
-                      Kompresi tidak akan mengubah konten dokumen, hanya mengoptimalkan struktur file.
+                      {t.pages.compress.hint}
                     </p>
                   </div>
                 </div>
                 <div className="sidebar-footer space-y-2">
                   <Button onClick={handleCompress} loading={processing} fullWidth size="lg"
                     icon={<FileText className="w-5 h-5" />}>
-                    {processing ? "Memproses…" : "Compress PDF"}
+                    {processing ? t.common.actions.processing : t.pages.compress.title}
                   </Button>
                   <Link href="/">
                     <Button variant="ghost" fullWidth size="sm">
-                      Ganti file
+                      {t.common.actions.changeFile}
                     </Button>
                   </Link>
                 </div>

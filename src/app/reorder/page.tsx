@@ -9,6 +9,7 @@ import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
 import PdfThumb from "@/components/PdfThumb";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -52,6 +53,7 @@ function PageCard({
 }
 
 export default function ReorderPage() {
+  const { t } = useLanguage();
   const [file, setFile]           = useState<File | null>(null);
   const [pdfDoc, setPdfDoc]       = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [pages, setPages]         = useState<PageItem[]>([]);
@@ -111,7 +113,7 @@ export default function ReorderPage() {
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a"); a.href = url; a.download = "reordered.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch { alert("Gagal memproses file"); }
+    } catch { alert(t.common.errors.processingFailed); }
     finally { setProcessing(false); }
   };
 
@@ -127,16 +129,16 @@ export default function ReorderPage() {
                   <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <ArrowDownUp className="w-8 h-8 text-brand-500" />
                   </div>
-                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Susun Ulang Halaman</h1>
-                  <p className="text-sm text-[var(--text-muted)]">Drag & drop halaman untuk mengatur ulang urutan PDF</p>
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">{t.pages.reorder.title}</h1>
+                  <p className="text-sm text-[var(--text-muted)]">{t.pages.reorder.subtitle}</p>
                 </div>
                 <DropZone onFiles={loadFile} accept="application/pdf" />
                 <div className="mt-5 grid grid-cols-4 gap-2">
                   {[
-                    { icon: <ArrowDownUp className="w-4 h-4" />, label: "Pilih File" },
-                    { icon: <GripVertical className="w-4 h-4" />, label: "Drag" },
-                    { icon: <ArrowDownUp className="w-4 h-4" />, label: "Balik Urutan" },
-                    { icon: <ArrowDownUp className="w-4 h-4" />, label: "Simpan" },
+                    { icon: <ArrowDownUp className="w-4 h-4" />, label: t.pages.reorder.steps.select },
+                    { icon: <GripVertical className="w-4 h-4" />, label: t.pages.reorder.steps.drag },
+                    { icon: <ArrowDownUp className="w-4 h-4" />, label: t.pages.reorder.steps.reverse },
+                    { icon: <ArrowDownUp className="w-4 h-4" />, label: t.pages.reorder.steps.save },
                   ].map(f => (
                     <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
                       <span className="text-brand-500">{f.icon}</span>
@@ -150,18 +152,18 @@ export default function ReorderPage() {
             <>
               <div className="flex-1 overflow-y-auto p-5">
                 <div className="flex items-center gap-2 mb-5 bg-white rounded-xl p-2.5 border border-[var(--border)]">
-                  <span className="text-sm font-semibold text-[var(--text-muted)]">{pages.length} halaman</span>
+                  <span className="text-sm font-semibold text-[var(--text-muted)]">{pages.length} {t.pages.reorder.pagesUnit}</span>
                   <div className="w-px h-4 bg-[var(--border)]" />
                   <Button onClick={() => setPages(p => [...p].reverse())} variant="outline" size="sm"
-                    icon={<ArrowDownUp className="w-3.5 h-3.5" />}>Balik Urutan</Button>
+                    icon={<ArrowDownUp className="w-3.5 h-3.5" />}>{t.pages.reorder.reverseOrder}</Button>
                   {!isOriginal && (
                     <Button
                       onClick={() => setPages(p => [...p].sort((a, b) => a.originalIndex - b.originalIndex))}
-                      variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />}>Reset</Button>
+                      variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />}>{t.pages.reorder.reset}</Button>
                   )}
                   {!isOriginal && (
                     <span className="text-xs text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg font-medium">
-                      Urutan diubah
+                      {t.pages.reorder.changedBadge}
                     </span>
                   )}
                 </div>
@@ -176,35 +178,35 @@ export default function ReorderPage() {
                   ))}
                 </div>
                 <p className="text-center text-xs text-[var(--text-subtle)] mt-6">
-                  Seret halaman untuk mengubah urutan. Nomor di bawah adalah posisi baru.
+                  {t.pages.reorder.hintBottom}
                 </p>
               </div>
 
               <div className="sidebar">
                 <div className="sidebar-header">
-                  <h2 className="font-bold text-[var(--text)] text-lg">Susun Halaman</h2>
+                  <h2 className="font-bold text-[var(--text)] text-lg">{t.pages.reorder.sidebarTitle}</h2>
                 </div>
                 <div className="sidebar-body">
                   <div className="card p-3">
-                    <p className="text-xs text-[var(--text-muted)] font-semibold mb-1">Urutan saat ini</p>
+                    <p className="text-xs text-[var(--text-muted)] font-semibold mb-1">{t.pages.reorder.currentOrder}</p>
                     <p className="text-xs text-[var(--text-subtle)] leading-relaxed">
                       {pages.map(p => p.originalNumber).join(" → ")}
                     </p>
                   </div>
                   {!isOriginal && (
                     <div className="card p-3 bg-amber-50 border-amber-100">
-                      <p className="text-xs text-amber-700">Urutan berbeda dari dokumen asli.</p>
+                      <p className="text-xs text-amber-700">{t.pages.reorder.differentFromOriginal}</p>
                     </div>
                   )}
                 </div>
                 <div className="sidebar-footer space-y-2">
                   <Button onClick={handleSave} loading={processing} disabled={isOriginal}
                     fullWidth size="lg" icon={<ArrowDownUp className="w-5 h-5" />}>
-                    {processing ? "Memproses…" : "Simpan PDF"}
+                    {processing ? t.common.actions.processing : t.pages.reorder.savePdf}
                   </Button>
                   <Link href="/">
                     <Button variant="ghost" fullWidth size="sm">
-                      Ganti file
+                      {t.common.actions.changeFile}
                     </Button>
                   </Link>
                 </div>

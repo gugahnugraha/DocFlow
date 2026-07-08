@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -40,7 +41,7 @@ function FileThumb({ item, onRemove }: { item: FileItem; onRemove: () => void })
   return (
     <div className="card group relative flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
       <button onClick={onRemove}
-        className="absolute top-2 right-2 z-10 w-6 h-6 bg-white border border-[var(--border)] rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 transition-all duration-200 shadow-sm hover:shadow-md">
+        className="absolute top-2 right-2 z-10 w-6 h-6 bg-white/75 backdrop-blur-xl border border-white/35 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 transition-all duration-200 shadow-sm hover:shadow-md">
         <X className="w-3 h-3" />
       </button>
       <div className="bg-gradient-to-br from-slate-50 to-orange-50 flex items-center justify-center min-h-[120px] p-2">
@@ -56,6 +57,7 @@ function FileThumb({ item, onRemove }: { item: FileItem; onRemove: () => void })
 }
 
 export default function MergePage() {
+  const { t } = useLanguage();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [processing, setProcessing] = useState(false);
 
@@ -77,7 +79,7 @@ export default function MergePage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = "merged.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch { alert("Gagal memproses file"); }
+    } catch { alert(t.common.errors.processingFailed); }
     finally { setProcessing(false); }
   };
 
@@ -93,18 +95,18 @@ export default function MergePage() {
                   <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <FileType className="w-8 h-8 text-brand-500" />
                   </div>
-                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Merge PDF</h1>
-                  <p className="text-sm text-[var(--text-muted)]">Gabungkan beberapa file PDF menjadi satu dokumen</p>
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">{t.pages.merge.title}</h1>
+                  <p className="text-sm text-[var(--text-muted)]">{t.pages.merge.subtitle}</p>
                 </div>
                 <DropZone onFiles={addFiles} accept="application/pdf" multiple />
                 <div className="mt-5 grid grid-cols-4 gap-2">
                   {[
-                    { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
-                    { icon: <Plus className="w-4 h-4" />, label: "Tambah File" },
-                    { icon: <X className="w-4 h-4" />, label: "Hapus File" },
-                    { icon: <FileType className="w-4 h-4" />, label: "Merge PDF" },
+                    { icon: <FileType className="w-4 h-4" />, label: t.pages.merge.steps.select },
+                    { icon: <Plus className="w-4 h-4" />, label: t.pages.merge.steps.add },
+                    { icon: <X className="w-4 h-4" />, label: t.pages.merge.steps.remove },
+                    { icon: <FileType className="w-4 h-4" />, label: t.pages.merge.steps.merge },
                   ].map(f => (
-                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <div key={f.label} className="card flex flex-col items-center gap-1.5 p-3 text-center">
                       <span className="text-brand-500">{f.icon}</span>
                       <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
                     </div>
@@ -125,7 +127,7 @@ export default function MergePage() {
                       <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
                         <Plus className="w-5 h-5 text-white" />
                       </div>
-                      <span className="text-xs font-semibold">Tambah</span>
+                      <span className="text-xs font-semibold">{t.common.actions.add}</span>
                     </div>
                   </label>
                 </div>
@@ -133,13 +135,13 @@ export default function MergePage() {
 
               <div className="sidebar">
                 <div className="sidebar-header">
-                  <h2 className="font-bold text-[var(--text)] text-lg">Merge PDF</h2>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{files.length} file dipilih</p>
+                  <h2 className="font-bold text-[var(--text)] text-lg">{t.pages.merge.title}</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{files.length} {t.pages.merge.selectedFiles}</p>
                 </div>
                 <div className="sidebar-body">
                   <div className="card p-3 bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
                     <p className="text-xs text-orange-700 leading-relaxed">
-                      Seret untuk mengubah urutan file, atau klik <strong>Tambah</strong> untuk menambah lebih banyak file PDF.
+                      {t.pages.merge.hint}
                     </p>
                   </div>
                   <div className="space-y-1.5">
@@ -155,11 +157,11 @@ export default function MergePage() {
                 <div className="sidebar-footer space-y-2">
                   <Button onClick={handleMerge} loading={processing} disabled={files.length < 2} fullWidth size="lg"
                     icon={<FileType className="w-5 h-5" />}>
-                    {processing ? "Memproses…" : "Merge PDF"}
+                    {processing ? t.common.actions.processing : t.pages.merge.title}
                   </Button>
                   <Link href="/">
                     <Button variant="ghost" fullWidth size="sm">
-                      Ganti file
+                      {t.common.actions.changeFile}
                     </Button>
                   </Link>
                 </div>

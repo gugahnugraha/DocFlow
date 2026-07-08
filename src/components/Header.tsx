@@ -96,7 +96,7 @@ export default function Header({ activePath }: { activePath?: string }) {
   const closeDropdown = () => { timerRef.current = setTimeout(() => setDropdownOpen(false), 120); };
 
   return (
-    <header className="bg-white/90 backdrop-blur-md border-b border-[var(--border)] sticky top-0 z-50">
+    <header className="bg-white/55 backdrop-blur-xl border-b border-white/30 sticky top-0 z-50">
       <div className="max-w-screen-xl mx-auto px-5 h-[60px] flex items-center justify-between gap-4">
 
         {/* ── Logo ── */}
@@ -140,7 +140,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                 onMouseEnter={openDropdown}
                 onMouseLeave={closeDropdown}
               >
-                <div className="bg-white border border-[var(--border)] rounded-2xl shadow-[var(--shadow-lg)] p-5 grid grid-cols-2 gap-6">
+                <div className="bg-white/65 backdrop-blur-xl border border-white/30 rounded-2xl shadow-[0_20px_45px_-30px_rgba(15,23,42,0.55)] p-5 grid grid-cols-2 gap-6">
                   {TOOL_GROUPS.map((group) => (
                     <div key={group.label}>
                       <p className="text-[10px] font-bold text-[var(--text-subtle)] uppercase tracking-widest mb-2.5 px-1">
@@ -208,7 +208,7 @@ export default function Header({ activePath }: { activePath?: string }) {
               <Globe className="w-5 h-5" />
             </button>
             {langMenuOpen && (
-              <div className="absolute top-full right-0 mt-2 w-32 bg-white border border-[var(--border)] rounded-xl shadow-lg p-2">
+              <div className="absolute top-full right-0 mt-2 w-32 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl shadow-[0_18px_40px_-26px_rgba(15,23,42,0.55)] p-2">
                 <button
                   onClick={() => { setLanguage("id"); setLangMenuOpen(false); }}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
@@ -217,7 +217,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                       : "text-[var(--text-muted)] hover:bg-[var(--bg)]"
                   }`}
                 >
-                  🇮🇩 Indonesia
+                  🇮🇩 {t.common.languages.id}
                 </button>
                 <button
                   onClick={() => { setLanguage("en"); setLangMenuOpen(false); }}
@@ -227,7 +227,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                       : "text-[var(--text-muted)] hover:bg-[var(--bg)]"
                   }`}
                 >
-                  🇺🇸 English
+                  🇺🇸 {t.common.languages.en}
                 </button>
               </div>
             )}
@@ -243,12 +243,12 @@ export default function Header({ activePath }: { activePath?: string }) {
                 {session.user.image ? (
                   <img
                     src={session.user.image}
-                    alt={session.user.name || "User"}
+                    alt={session.user.name || t.common.user.fallbackAlt}
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-white font-semibold">
-                    {session.user.name?.[0] || "U"}
+                    {session.user.name?.[0] || t.common.user.fallbackInitial}
                   </div>
                 )}
                 <span className="text-sm font-semibold text-[var(--text)]">
@@ -256,7 +256,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                 </span>
               </button>
               {userMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-[var(--border)] rounded-xl shadow-lg p-2">
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl shadow-[0_18px_40px_-26px_rgba(15,23,42,0.55)] p-2">
                   <button
                     onClick={() => signOut({ callbackUrl: "/" })}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-muted)] hover:text-red-600 hover:bg-red-50 transition-all duration-200"
@@ -298,7 +298,7 @@ export default function Header({ activePath }: { activePath?: string }) {
 
       {/* ── Mobile drawer ── */}
       {menuOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-white animate-slide-up max-h-[80vh] overflow-y-auto">
+        <div className="md:hidden border-t border-white/30 bg-white/65 backdrop-blur-xl animate-slide-up max-h-[80vh] overflow-y-auto">
           <div className="px-4 py-4 space-y-5">
             {TOOL_GROUPS.map((group) => (
               <div key={group.label}>
@@ -334,7 +334,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                       : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg)]"
                   }`}
                 >
-                  🇮🇩 Indonesia
+                  🇮🇩 {t.common.languages.id}
                 </button>
                 <button
                   onClick={() => setLanguage("en")}
@@ -344,7 +344,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                       : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg)]"
                   }`}
                 >
-                  🇺🇸 English
+                  🇺🇸 {t.common.languages.en}
                 </button>
               </div>
               

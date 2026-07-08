@@ -9,6 +9,7 @@ import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
 import PdfThumb from "@/components/PdfThumb";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -73,6 +74,7 @@ function PageCard({
 }
 
 export default function RotatePage() {
+  const { t } = useLanguage();
   const [file, setFile]             = useState<File | null>(null);
   const [pdfDoc, setPdfDoc]         = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [pages, setPages]           = useState<PageState[]>([]);
@@ -118,7 +120,7 @@ export default function RotatePage() {
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a"); a.href = url; a.download = "rotated.pdf"; a.click();
       URL.revokeObjectURL(url);
-    } catch { alert("Gagal memproses file"); }
+    } catch { alert(t.common.errors.processingFailed); }
     finally { setProcessing(false); }
   };
 
@@ -134,16 +136,16 @@ export default function RotatePage() {
                   <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <RotateCw className="w-8 h-8 text-brand-500" />
                   </div>
-                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Rotate PDF</h1>
-                  <p className="text-sm text-[var(--text-muted)]">Putar halaman PDF secara individual atau semua sekaligus</p>
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">{t.pages.rotate.title}</h1>
+                  <p className="text-sm text-[var(--text-muted)]">{t.pages.rotate.subtitle}</p>
                 </div>
                 <DropZone onFiles={loadFile} accept="application/pdf" />
                 <div className="mt-5 grid grid-cols-4 gap-2">
                   {[
-                    { icon: <RotateCw className="w-4 h-4" />, label: "Pilih File" },
-                    { icon: <RotateCcw className="w-4 h-4" />, label: "Kiri" },
-                    { icon: <RotateCw className="w-4 h-4" />, label: "Kanan" },
-                    { icon: <RotateCw className="w-4 h-4" />, label: "Simpan" },
+                    { icon: <RotateCw className="w-4 h-4" />, label: t.pages.merge.steps.select },
+                    { icon: <RotateCcw className="w-4 h-4" />, label: t.common.actions.left },
+                    { icon: <RotateCw className="w-4 h-4" />, label: t.common.actions.right },
+                    { icon: <RotateCw className="w-4 h-4" />, label: t.common.actions.save },
                   ].map(f => (
                     <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
                       <span className="text-brand-500">{f.icon}</span>
@@ -159,14 +161,14 @@ export default function RotatePage() {
                 <div className="flex items-center gap-2 mb-5 bg-white rounded-xl p-2.5 border border-[var(--border)]">
                   <Button onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: !allSelected })))}
                     variant="outline" size="sm">
-                    {allSelected ? "Hapus pilihan" : "Pilih semua"}
+                    {allSelected ? t.common.actions.clearSelection : t.common.actions.selectAll}
                   </Button>
-                  <span className="text-xs text-[var(--text-subtle)]">{pages.filter(p => p.selected).length} dipilih</span>
+                  <span className="text-xs text-[var(--text-subtle)]">{pages.filter(p => p.selected).length} {t.pages.rotate.selectedSuffix}</span>
                   <div className="w-px h-5 bg-[var(--border)]" />
                   <Button onClick={() => rotateSelected(270)} variant="outline" size="sm"
-                    icon={<RotateCcw className="w-3.5 h-3.5" />}>Kiri</Button>
+                    icon={<RotateCcw className="w-3.5 h-3.5" />}>{t.common.actions.left}</Button>
                   <Button onClick={() => rotateSelected(90)} variant="outline" size="sm"
-                    icon={<RotateCw className="w-3.5 h-3.5" />}>Kanan</Button>
+                    icon={<RotateCw className="w-3.5 h-3.5" />}>{t.common.actions.right}</Button>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-4">
                   {pages.map((page, i) => (
@@ -178,19 +180,19 @@ export default function RotatePage() {
 
               <div className="sidebar">
                 <div className="sidebar-header">
-                  <h2 className="font-bold text-[var(--text)] text-lg">Rotate PDF</h2>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{pages.length} halaman</p>
+                  <h2 className="font-bold text-[var(--text)] text-lg">{t.pages.rotate.title}</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{pages.length} {t.pages.rotate.pagesUnit}</p>
                 </div>
                 <div className="sidebar-body">
                   <div className="card p-3 bg-blue-50 border-blue-100">
                     <p className="text-xs text-blue-700 leading-relaxed">
-                      Klik ikon putar di bawah setiap halaman, atau pilih beberapa dan gunakan tombol bulk.
+                      {t.pages.rotate.hint}
                     </p>
                   </div>
                   {hasChanges && (
                     <div className="card p-3 bg-amber-50 border-amber-100">
                       <p className="text-xs text-amber-700 font-medium">
-                        {pages.filter(p => p.rotation !== 0).length} halaman akan dirotasi
+                        {pages.filter(p => p.rotation !== 0).length} {t.pages.rotate.willRotateSuffix}
                       </p>
                     </div>
                   )}
@@ -198,11 +200,11 @@ export default function RotatePage() {
                 <div className="sidebar-footer space-y-2">
                   <Button onClick={handleRotate} loading={processing} disabled={!hasChanges}
                     fullWidth size="lg" icon={<RotateCw className="w-5 h-5" />}>
-                    {processing ? "Memproses…" : "Rotate PDF"}
+                    {processing ? t.common.actions.processing : t.pages.rotate.title}
                   </Button>
                   <Link href="/">
                     <Button variant="ghost" fullWidth size="sm">
-                      Ganti file
+                      {t.common.actions.changeFile}
                     </Button>
                   </Link>
                 </div>

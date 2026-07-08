@@ -61,8 +61,8 @@ export default function LoginPage() {
               </span>
             </Link>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
-            <p className="text-gray-500 text-sm">Please enter your details to sign in</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{t.loginSignup.welcomeBackTitle}</h1>
+            <p className="text-gray-500 text-sm">{t.loginSignup.welcomeBackSubtitle}</p>
           </div>
 
           {error && (
@@ -74,7 +74,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email
+                {t.loginSignup.email}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 flex-shrink-0" />
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-gray-50 text-sm"
-                  placeholder="Enter your email"
+                  placeholder={t.loginSignup.emailPlaceholder}
                   required
                 />
               </div>
@@ -91,7 +91,7 @@ export default function LoginPage() {
 
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Password
+                {t.loginSignup.password}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 flex-shrink-0" />
@@ -125,10 +125,10 @@ export default function LoginPage() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-3.5 h-3.5 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                 />
-                <span className="text-xs text-gray-600">Remember me</span>
+                <span className="text-xs text-gray-600">{t.loginSignup.rememberMe}</span>
               </label>
               <a href="#" className="text-xs font-semibold text-orange-600 hover:text-orange-700">
-                Forgot password?
+                {t.loginSignup.forgotPassword}
               </a>
             </div>
 
@@ -137,13 +137,13 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 hover:from-orange-600 hover:via-orange-700 hover:to-red-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? t.loginSignup.signingIn : t.loginSignup.signIn}
             </button>
           </form>
 
           <div className="flex items-center my-4">
             <div className="flex-1 border-t border-gray-200" />
-            <span className="mx-3 text-xs text-gray-500">or continue with</span>
+            <span className="mx-3 text-xs text-gray-500">{t.common.text.orContinueWith}</span>
             <div className="flex-1 border-t border-gray-200" />
           </div>
 
@@ -157,14 +157,14 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Continue with Google
+            {t.loginSignup.continueWithGoogle}
           </button>
 
           <div className="text-center mt-5">
             <p className="text-xs text-gray-500">
-              Don't have an account?{" "}
+              {t.loginSignup.dontHaveAccount}{" "}
               <Link href="/signup" className="font-semibold text-orange-600 hover:text-orange-700 text-xs">
-                Sign up
+                {t.loginSignup.signUpLink}
               </Link>
             </p>
           </div>
@@ -177,10 +177,10 @@ export default function LoginPage() {
           <ShieldCheck className="w-8 h-8 text-white flex-shrink-0" />
         </div>
         <h2 className="text-3xl font-bold text-white mb-4 text-center">
-          Secure & Powerful PDF Tools
+          {t.loginSignup.heroTitle}
         </h2>
         <p className="text-white/90 text-base text-center max-w-md mb-7">
-          Edit, merge, split, and protect your PDF documents entirely in your browser. No server uploads, ensuring maximum privacy.
+          {t.loginSignup.heroDescription}
         </p>
 
         <div className="grid grid-cols-2 gap-3 w-full max-w-md">
@@ -189,7 +189,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             <div>
-              <h3 className="text-white font-semibold text-sm">Lightning Fast</h3>
+              <h3 className="text-white font-semibold text-sm">{t.loginSignup.heroBadges.fast}</h3>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <div>
-              <h3 className="text-white font-semibold text-sm">100% Private</h3>
+              <h3 className="text-white font-semibold text-sm">{t.loginSignup.heroBadges.private}</h3>
             </div>
           </div>
 
@@ -207,7 +207,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="text-white font-semibold text-sm">Free Forever</h3>
+              <h3 className="text-white font-semibold text-sm">{t.loginSignup.heroBadges.free}</h3>
             </div>
           </div>
 
@@ -216,7 +216,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
             <div>
-              <h3 className="text-white font-semibold text-sm">All Formats</h3>
+              <h3 className="text-white font-semibold text-sm">{t.loginSignup.heroBadges.formats}</h3>
             </div>
           </div>
         </div>

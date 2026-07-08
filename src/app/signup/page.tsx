@@ -73,8 +73,8 @@ export default function SignupPage() {
               </span>
             </Link>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Create your account</h1>
-            <p className="text-gray-500 text-sm">Join our community of PDF enthusiasts</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{t.loginSignup.createAccountTitle}</h1>
+            <p className="text-gray-500 text-sm">{t.loginSignup.createAccountSubtitle}</p>
           </div>
 
           {error && (
@@ -86,7 +86,7 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Full Name
+                {t.loginSignup.fullName}
               </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 flex-shrink-0" />
@@ -103,7 +103,7 @@ export default function SignupPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email
+                {t.loginSignup.email}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 flex-shrink-0" />
@@ -120,7 +120,7 @@ export default function SignupPage() {
 
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Password
+                {t.loginSignup.password}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 flex-shrink-0" />
@@ -151,13 +151,13 @@ export default function SignupPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 hover:from-orange-600 hover:via-orange-700 hover:to-red-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              {loading ? "Creating account..." : "Create your account"}
+              {loading ? t.loginSignup.creatingAccount : t.loginSignup.signup}
             </button>
           </form>
 
           <div className="flex items-center my-4">
             <div className="flex-1 border-t border-gray-200" />
-            <span className="mx-3 text-xs text-gray-500">or continue with</span>
+            <span className="mx-3 text-xs text-gray-500">{t.common.text.orContinueWith}</span>
             <div className="flex-1 border-t border-gray-200" />
           </div>
 
@@ -171,14 +171,14 @@ export default function SignupPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Continue with Google
+            {t.loginSignup.continueWithGoogle}
           </button>
 
           <div className="text-center mt-5">
             <p className="text-xs text-gray-500">
-              Already have an account?{" "}
+              {t.loginSignup.alreadyHaveAccount}{" "}
               <Link href="/login" className="font-semibold text-orange-600 hover:text-orange-700 text-xs">
-                Sign in
+                {t.loginSignup.signInLink}
               </Link>
             </p>
           </div>
@@ -197,10 +197,10 @@ export default function SignupPage() {
           <UserPlus className="w-8 h-8 text-white flex-shrink-0" />
         </div>
         <h2 className="text-3xl font-bold text-white mb-4 text-center">
-          Join the Revolution
+          {t.loginSignup.signupHeroTitle}
         </h2>
         <p className="text-white/90 text-base text-center max-w-md mb-7">
-          Get access to premium PDF tools, save your configurations, and manage your documents with ease.
+          {t.loginSignup.signupHeroDescription}
         </p>
 
         <div className="grid grid-cols-2 gap-3 w-full max-w-md">
@@ -209,8 +209,8 @@ export default function SignupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <div>
-              <h3 className="text-white font-semibold text-sm">Community Driven</h3>
-              <p className="text-white/70 text-xs">Open source and transparent</p>
+              <h3 className="text-white font-semibold text-sm">{t.loginSignup.signupBadges.communityTitle}</h3>
+              <p className="text-white/70 text-xs">{t.loginSignup.signupBadges.communityDesc}</p>
             </div>
           </div>
 
@@ -219,8 +219,8 @@ export default function SignupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
             </svg>
             <div>
-              <h3 className="text-white font-semibold text-sm">Accessible Everywhere</h3>
-              <p className="text-white/70 text-xs">Use on any device, any time</p>
+              <h3 className="text-white font-semibold text-sm">{t.loginSignup.signupBadges.accessTitle}</h3>
+              <p className="text-white/70 text-xs">{t.loginSignup.signupBadges.accessDesc}</p>
             </div>
           </div>
         </div>
