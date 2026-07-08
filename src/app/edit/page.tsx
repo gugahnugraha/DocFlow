@@ -12,6 +12,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -643,244 +644,248 @@ export default function EditPage() {
 
   if (!file) {
     return (
-      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-        <Header activePath="/edit" />
-        <main className="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
-          <div className="w-full max-w-lg">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Pencil className="w-8 h-8 text-brand-500" />
-              </div>
-              <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Edit PDF</h1>
-              <p className="text-sm text-[var(--text-muted)]">Tambah teks, highlight, bentuk, dan anotasi. Teks yang ada dapat diklik dan diedit.</p>
-            </div>
-            <DropZone onFiles={f => loadFile(f[0])} accept="application/pdf" />
-            <div className="mt-5 grid grid-cols-4 gap-2">
-              {[
-                { icon: <Type className="w-4 h-4" />, label: "Tambah Teks" },
-                { icon: <Highlighter className="w-4 h-4" />, label: "Highlight" },
-                { icon: <Pencil className="w-4 h-4" />, label: "Gambar Bebas" },
-                { icon: <Square className="w-4 h-4" />, label: "Bentuk" },
-              ].map(f => (
-                <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
-                  <span className="text-brand-500">{f.icon}</span>
-                  <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+      <ProtectedRoute>
+        <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+          <Header activePath="/edit" />
+          <main className="flex items-center justify-center min-h-[calc(100vh-60px)] p-6">
+            <div className="w-full max-w-lg">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Pencil className="w-8 h-8 text-brand-500" />
                 </div>
-              ))}
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
-      <Header activePath="/edit" />
-
-      {/* ── Toolbar ── */}
-      <div className="bg-white border-b border-[var(--border)] px-4 py-2 flex items-center gap-1 flex-wrap sticky top-[60px] z-40 shadow-sm">
-        {/* Tools */}
-        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 mr-1">
-          {TOOLS_CFG.map(t => (
-            <button key={t.id} onClick={() => setTool(t.id)} title={`${t.label} (${t.key})`}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                tool === t.id ? "bg-brand-500 text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white"
-              }`}>
-              {t.icon}
-              <span className="hidden sm:inline">{t.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <span className="w-px h-6 bg-[var(--border)] mx-0.5" />
-
-        {/* Text formatting */}
-        {isTxtActive && (
-          <>
-            <select value={fmt.fontSize} onChange={e => updateFmt("fontSize", parseInt(e.target.value))}
-              className="input w-16 py-1 text-xs">
-              {[8,9,10,11,12,14,16,18,20,22,24,28,32,36,40,48,56,64,72].map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            {[
-              { key: "bold",      icon: <Bold className="w-4 h-4" />,      val: fmt.bold },
-              { key: "italic",    icon: <Italic className="w-4 h-4" />,    val: fmt.italic },
-              { key: "underline", icon: <Underline className="w-4 h-4" />, val: fmt.underline },
-            ].map(f => (
-              <button key={f.key} onClick={() => updateFmt(f.key, !f.val)}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${f.val ? "bg-brand-100 text-brand-600" : "text-[var(--text-muted)] hover:bg-[var(--bg)]"}`}>
-                {f.icon}
-              </button>
-            ))}
-            <input type="color" value={fmt.color} onChange={e => updateFmt("color", e.target.value)}
-              className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white" title="Warna teks" />
-            <span className="w-px h-6 bg-[var(--border)] mx-0.5" />
-          </>
-        )}
-
-        {/* Delete */}
-        {selectedId && (
-          <button onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors" title="Hapus (Delete)">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
-          <button
-            onClick={undo}
-            disabled={undoStack.current.length === 0}
-            title="Undo (Ctrl+Z)"
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={redo}
-            disabled={redoStack.current.length === 0}
-            title="Redo (Ctrl+Y)"
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Zoom */}
-        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1">
-          <button onClick={() => setZoomIdx(i => Math.max(i - 1, 0))} disabled={zoomIdx === 0}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => setZoomIdx(2)}
-            className="px-2 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:bg-white min-w-[44px] text-center">
-            {Math.round(scale * 100)}%
-          </button>
-          <button onClick={() => setZoomIdx(i => Math.min(i + 1, ZOOM_STEPS.length - 1))} disabled={zoomIdx === ZOOM_STEPS.length - 1}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Page nav */}
-        <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="text-xs font-semibold text-[var(--text-muted)] px-1 min-w-[48px] text-center">{page} / {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <Button onClick={handleSave} loading={saving} size="sm" className="ml-2"
-          icon={saveOk ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          variant={saveOk ? "outline" : "brand"}>
-          {saveOk ? "Tersimpan!" : "Simpan"}
-        </Button>
-      </div>
-
-      {/* ── Body ── */}
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* Thumbnails */}
-        <div className="w-[136px] flex-shrink-0 bg-white border-r border-[var(--border)] overflow-y-auto p-2 space-y-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-            <PageThumb key={n} arrayBuffer={fileAB} pageNumber={n} selected={page === n} onClick={() => setPage(n)} />
-          ))}
-        </div>
-
-        {/* Canvas */}
-        <div className="flex-1 overflow-auto p-8 flex justify-center items-start"
-          style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
-          <div className="shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
-            <EditorCanvas arrayBuffer={fileAB} pageNumber={page} tool={tool}
-              annotations={annotations}
-              onAnnotationsChange={(next) => pushHistory(annotations, next)}
-              selectedId={selectedId} onSelect={setSelectedId}
-              scale={scale} fmt={fmt} />
-          </div>
-        </div>
-
-        {/* Properties */}
-        <div className="w-60 flex-shrink-0 bg-white border-l border-[var(--border)] flex flex-col overflow-y-auto">
-          <div className="px-4 pt-4 pb-3 border-b border-[var(--border)]">
-            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Properties</p>
-          </div>
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {/* File */}
-            <div>
-              <p className="label">File</p>
-              <div className="card p-3">
-                <p className="text-xs font-semibold text-[var(--text)] truncate">{file.name}</p>
-                <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">{totalPages} hal · {Math.round(file.size / 1024)} KB</p>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Edit PDF</h1>
+                <p className="text-sm text-[var(--text-muted)]">Tambah teks, highlight, bentuk, dan anotasi. Teks yang ada dapat diklik dan diedit.</p>
               </div>
-            </div>
-            {/* Annotations */}
-            <div>
-              <p className="label">Anotasi</p>
-              <div className="card p-3 space-y-1">
-                <p className="text-xs text-[var(--text-muted)]"><span className="font-bold text-brand-500 text-sm">{userAnnCount}</span> anotasi baru</p>
-                <p className="text-[11px] text-[var(--text-subtle)]">{annotations.filter(a => a.page === page && !a.isExtracted).length} di halaman ini</p>
-                <p className="text-[11px] text-[var(--text-subtle)]">{annotations.filter(a => a.isExtracted).length} teks asli terdeteksi</p>
-              </div>
-            </div>
-            {/* Selected */}
-            {selectedAnn && (
-              <div>
-                <p className="label">Dipilih</p>
-                <div className="card p-3 space-y-3">
-                  {selectedAnn.isExtracted && (
-                    <p className="text-[11px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1">Teks asli PDF — klik untuk edit</p>
-                  )}
-                  <div>
-                    <p className="text-[11px] text-[var(--text-subtle)] mb-1">Warna</p>
-                    <input type="color" value={selectedAnn.color}
-                      onChange={e => setAnnotations(p => p.map(a => a.id === selectedId ? { ...a, color: e.target.value, isExtracted: false } : a))}
-                      className="w-full h-8 rounded-lg border border-[var(--border)] cursor-pointer" />
-                  </div>
-                  {["rectangle","circle","highlight"].includes(selectedAnn.type) && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={selectedAnn.fill || false}
-                        onChange={e => setAnnotations(p => p.map(a => a.id === selectedId ? { ...a, fill: e.target.checked } : a))}
-                        className="w-4 h-4 accent-brand-500 rounded" />
-                      <span className="text-xs font-medium text-[var(--text-muted)]">Isi bentuk</span>
-                    </label>
-                  )}
-                  <button onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-xs font-semibold transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" /> Hapus
-                  </button>
-                </div>
-              </div>
-            )}
-            {/* Shortcuts */}
-            <div>
-              <p className="label">Pintasan Keyboard</p>
-              <div className="space-y-1">
-                {[["V","Seleksi"],["T","Teks"],["H","Highlight"],["D","Gambar"],["R","Persegi"],["O","Lingkaran"],["+/-","Zoom"],["← →","Halaman"],["Del","Hapus"]].map(([k,l]) => (
-                  <div key={k} className="flex items-center justify-between py-0.5">
-                    <span className="text-[11px] text-[var(--text-muted)]">{l}</span>
-                    <kbd className="text-[10px] font-mono font-semibold bg-[var(--bg)] border border-[var(--border)] rounded px-1.5 py-0.5 text-[var(--text-subtle)]">{k}</kbd>
+              <DropZone onFiles={f => loadFile(f[0])} accept="application/pdf" />
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {[
+                  { icon: <Type className="w-4 h-4" />, label: "Tambah Teks" },
+                  { icon: <Highlighter className="w-4 h-4" />, label: "Highlight" },
+                  { icon: <Pencil className="w-4 h-4" />, label: "Gambar Bebas" },
+                  { icon: <Square className="w-4 h-4" />, label: "Bentuk" },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <span className="text-brand-500">{f.icon}</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
                   </div>
                 ))}
               </div>
             </div>
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  return (
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+        <Header activePath="/edit" />
+
+        {/* ── Toolbar ── */}
+        <div className="bg-white border-b border-[var(--border)] px-4 py-2 flex items-center gap-1 flex-wrap sticky top-[60px] z-40 shadow-sm">
+          {/* Tools */}
+          <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 mr-1">
+            {TOOLS_CFG.map(t => (
+              <button key={t.id} onClick={() => setTool(t.id)} title={`${t.label} (${t.key})`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  tool === t.id ? "bg-brand-500 text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white"
+                }`}>
+                {t.icon}
+                <span className="hidden sm:inline">{t.label}</span>
+              </button>
+            ))}
           </div>
-          <div className="p-4 border-t border-[var(--border)]">
-            <Button onClick={handleSave} loading={saving} fullWidth size="md"
-              icon={saveOk ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              variant={saveOk ? "outline" : "brand"}>
-              {saveOk ? "Tersimpan!" : "Simpan Perubahan"}
-            </Button>
+
+          <span className="w-px h-6 bg-[var(--border)] mx-0.5" />
+
+          {/* Text formatting */}
+          {isTxtActive && (
+            <>
+              <select value={fmt.fontSize} onChange={e => updateFmt("fontSize", parseInt(e.target.value))}
+                className="input w-16 py-1 text-xs">
+                {[8,9,10,11,12,14,16,18,20,22,24,28,32,36,40,48,56,64,72].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              {[
+                { key: "bold",      icon: <Bold className="w-4 h-4" />,      val: fmt.bold },
+                { key: "italic",    icon: <Italic className="w-4 h-4" />,    val: fmt.italic },
+                { key: "underline", icon: <Underline className="w-4 h-4" />, val: fmt.underline },
+              ].map(f => (
+                <button key={f.key} onClick={() => updateFmt(f.key, !f.val)}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${f.val ? "bg-brand-100 text-brand-600" : "text-[var(--text-muted)] hover:bg-[var(--bg)]"}`}>
+                  {f.icon}
+                </button>
+              ))}
+              <input type="color" value={fmt.color} onChange={e => updateFmt("color", e.target.value)}
+                className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer p-0.5 bg-white" title="Warna teks" />
+              <span className="w-px h-6 bg-[var(--border)] mx-0.5" />
+            </>
+          )}
+
+          {/* Delete */}
+          {selectedId && (
+            <button onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors" title="Hapus (Delete)">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Undo / Redo */}
+          <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
+            <button
+              onClick={undo}
+              disabled={undoStack.current.length === 0}
+              title="Undo (Ctrl+Z)"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={redoStack.current.length === 0}
+              title="Redo (Ctrl+Y)"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white hover:text-[var(--text)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Zoom */}
+          <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1">
+            <button onClick={() => setZoomIdx(i => Math.max(i - 1, 0))} disabled={zoomIdx === 0}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setZoomIdx(2)}
+              className="px-2 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:bg-white min-w-[44px] text-center">
+              {Math.round(scale * 100)}%
+            </button>
+            <button onClick={() => setZoomIdx(i => Math.min(i + 1, ZOOM_STEPS.length - 1))} disabled={zoomIdx === ZOOM_STEPS.length - 1}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Page nav */}
+          <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-semibold text-[var(--text-muted)] px-1 min-w-[48px] text-center">{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <Button onClick={handleSave} loading={saving} size="sm" className="ml-2"
+            icon={saveOk ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            variant={saveOk ? "outline" : "brand"}>
+            {saveOk ? "Tersimpan!" : "Simpan"}
+          </Button>
+        </div>
+
+        {/* ── Body ── */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* Thumbnails */}
+          <div className="w-[136px] flex-shrink-0 bg-white border-r border-[var(--border)] overflow-y-auto p-2 space-y-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+              <PageThumb key={n} arrayBuffer={fileAB} pageNumber={n} selected={page === n} onClick={() => setPage(n)} />
+            ))}
+          </div>
+
+          {/* Canvas */}
+          <div className="flex-1 overflow-auto p-8 flex justify-center items-start"
+            style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
+            <div className="shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
+              <EditorCanvas arrayBuffer={fileAB} pageNumber={page} tool={tool}
+                annotations={annotations}
+                onAnnotationsChange={(next) => pushHistory(annotations, next)}
+                selectedId={selectedId} onSelect={setSelectedId}
+                scale={scale} fmt={fmt} />
+            </div>
+          </div>
+
+          {/* Properties */}
+          <div className="w-60 flex-shrink-0 bg-white border-l border-[var(--border)] flex flex-col overflow-y-auto">
+            <div className="px-4 pt-4 pb-3 border-b border-[var(--border)]">
+              <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Properties</p>
+            </div>
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+              {/* File */}
+              <div>
+                <p className="label">File</p>
+                <div className="card p-3">
+                  <p className="text-xs font-semibold text-[var(--text)] truncate">{file.name}</p>
+                  <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">{totalPages} hal · {Math.round(file.size / 1024)} KB</p>
+                </div>
+              </div>
+              {/* Annotations */}
+              <div>
+                <p className="label">Anotasi</p>
+                <div className="card p-3 space-y-1">
+                  <p className="text-xs text-[var(--text-muted)]"><span className="font-bold text-brand-500 text-sm">{userAnnCount}</span> anotasi baru</p>
+                  <p className="text-[11px] text-[var(--text-subtle)]">{annotations.filter(a => a.page === page && !a.isExtracted).length} di halaman ini</p>
+                  <p className="text-[11px] text-[var(--text-subtle)]">{annotations.filter(a => a.isExtracted).length} teks asli terdeteksi</p>
+                </div>
+              </div>
+              {/* Selected */}
+              {selectedAnn && (
+                <div>
+                  <p className="label">Dipilih</p>
+                  <div className="card p-3 space-y-3">
+                    {selectedAnn.isExtracted && (
+                      <p className="text-[11px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1">Teks asli PDF — klik untuk edit</p>
+                    )}
+                    <div>
+                      <p className="text-[11px] text-[var(--text-subtle)] mb-1">Warna</p>
+                      <input type="color" value={selectedAnn.color}
+                        onChange={e => setAnnotations(p => p.map(a => a.id === selectedId ? { ...a, color: e.target.value, isExtracted: false } : a))}
+                        className="w-full h-8 rounded-lg border border-[var(--border)] cursor-pointer" />
+                    </div>
+                    {["rectangle","circle","highlight"].includes(selectedAnn.type) && (
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={selectedAnn.fill || false}
+                          onChange={e => setAnnotations(p => p.map(a => a.id === selectedId ? { ...a, fill: e.target.checked } : a))}
+                          className="w-4 h-4 accent-brand-500 rounded" />
+                        <span className="text-xs font-medium text-[var(--text-muted)]">Isi bentuk</span>
+                      </label>
+                    )}
+                    <button onClick={() => { setAnnotations(a => a.filter(x => x.id !== selectedId)); setSelectedId(null); }}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-xs font-semibold transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" /> Hapus
+                    </button>
+                  </div>
+                </div>
+              )}
+              {/* Shortcuts */}
+              <div>
+                <p className="label">Pintasan Keyboard</p>
+                <div className="space-y-1">
+                  {[["V","Seleksi"],["T","Teks"],["H","Highlight"],["D","Gambar"],["R","Persegi"],["O","Lingkaran"],["+/-","Zoom"],["← →","Halaman"],["Del","Hapus"]].map(([k,l]) => (
+                    <div key={k} className="flex items-center justify-between py-0.5">
+                      <span className="text-[11px] text-[var(--text-muted)]">{l}</span>
+                      <kbd className="text-[10px] font-mono font-semibold bg-[var(--bg)] border border-[var(--border)] rounded px-1.5 py-0.5 text-[var(--text-subtle)]">{k}</kbd>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-[var(--border)]">
+              <Button onClick={handleSave} loading={saving} fullWidth size="md"
+                icon={saveOk ? <CheckCheck className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                variant={saveOk ? "outline" : "brand"}>
+                {saveOk ? "Tersimpan!" : "Simpan Perubahan"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
 

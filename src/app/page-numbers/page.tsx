@@ -6,6 +6,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -118,107 +119,109 @@ export default function PageNumbersPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <Header activePath="/page-numbers" />
-      <main className="flex min-h-[calc(100vh-60px)]">
-        {!file ? (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-lg">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Hash className="w-8 h-8 text-brand-500" />
-                </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Nomor Halaman PDF</h1>
-                <p className="text-sm text-[var(--text-muted)]">Tambahkan nomor halaman dengan posisi dan format kustom</p>
-              </div>
-              <DropZone onFiles={loadFile} accept="application/pdf" />
-              <div className="mt-5 grid grid-cols-4 gap-2">
-                {[
-                  { icon: <Hash className="w-4 h-4" />, label: "Pilih File" },
-                  { icon: <Hash className="w-4 h-4" />, label: "Posisi" },
-                  { icon: <Hash className="w-4 h-4" />, label: "Format" },
-                  { icon: <Hash className="w-4 h-4" />, label: "Terapkan" },
-                ].map(f => (
-                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
-                    <span className="text-brand-500">{f.icon}</span>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+    <ProtectedRoute>
+      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+        <Header activePath="/page-numbers" />
+        <main className="flex min-h-[calc(100vh-60px)]">
+          {!file ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-lg">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Hash className="w-8 h-8 text-brand-500" />
                   </div>
-                ))}
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Nomor Halaman PDF</h1>
+                  <p className="text-sm text-[var(--text-muted)]">Tambahkan nomor halaman dengan posisi dan format kustom</p>
+                </div>
+                <DropZone onFiles={loadFile} accept="application/pdf" />
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  {[
+                    { icon: <Hash className="w-4 h-4" />, label: "Pilih File" },
+                    { icon: <Hash className="w-4 h-4" />, label: "Posisi" },
+                    { icon: <Hash className="w-4 h-4" />, label: "Format" },
+                    { icon: <Hash className="w-4 h-4" />, label: "Terapkan" },
+                  ].map(f => (
+                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                      <span className="text-brand-500">{f.icon}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-auto p-8 flex flex-col items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage <= 1} variant="outline" size="sm">← Prev</Button>
-                <span className="text-sm text-[var(--text-muted)] font-medium px-2">{previewPage} / {totalPages}</span>
-                <Button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage >= totalPages} variant="outline" size="sm">Next →</Button>
-              </div>
-              <Preview file={file} pageNumber={previewPage} totalPages={totalPages} format={activeFormat}
-                fontSize={fontSize} color={color} position={position} startNumber={startNumber}
-                skipFirst={skipFirst} marginX={marginX} marginY={marginY} />
-            </div>
-            <div className="sidebar">
-              <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Nomor Halaman</h2></div>
-              <div className="sidebar-body">
-                <div>
-                  <label className="label">Posisi</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {POSITIONS.map(p => (
-                      <button key={p.id} onClick={() => setPosition(p.id)}
-                        className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border-2 transition-all ${position === p.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-auto p-8 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage <= 1} variant="outline" size="sm">← Prev</Button>
+                  <span className="text-sm text-[var(--text-muted)] font-medium px-2">{previewPage} / {totalPages}</span>
+                  <Button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage >= totalPages} variant="outline" size="sm">Next →</Button>
                 </div>
-                <div>
-                  <label className="label">Format</label>
-                  <div className="grid grid-cols-2 gap-1.5 mb-2">
-                    {FORMAT_PRESETS.map(f => (
-                      <button key={f.id} onClick={() => { setFormat(f.id); setUseCustom(false); }}
-                        className={`py-1.5 text-[11px] font-semibold rounded-lg border-2 transition-all ${!useCustom && format === f.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
-                        {f.label}
-                      </button>
-                    ))}
+                <Preview file={file} pageNumber={previewPage} totalPages={totalPages} format={activeFormat}
+                  fontSize={fontSize} color={color} position={position} startNumber={startNumber}
+                  skipFirst={skipFirst} marginX={marginX} marginY={marginY} />
+              </div>
+              <div className="sidebar">
+                <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Nomor Halaman</h2></div>
+                <div className="sidebar-body">
+                  <div>
+                    <label className="label">Posisi</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {POSITIONS.map(p => (
+                        <button key={p.id} onClick={() => setPosition(p.id)}
+                          className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border-2 transition-all ${position === p.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <label className="flex items-center gap-2 text-xs mb-1 cursor-pointer">
-                    <input type="checkbox" checked={useCustom} onChange={e => setUseCustom(e.target.checked)} className="accent-brand-500" />
-                    <span className="text-[var(--text-muted)]">Format kustom</span>
+                  <div>
+                    <label className="label">Format</label>
+                    <div className="grid grid-cols-2 gap-1.5 mb-2">
+                      {FORMAT_PRESETS.map(f => (
+                        <button key={f.id} onClick={() => { setFormat(f.id); setUseCustom(false); }}
+                          className={`py-1.5 text-[11px] font-semibold rounded-lg border-2 transition-all ${!useCustom && format === f.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="flex items-center gap-2 text-xs mb-1 cursor-pointer">
+                      <input type="checkbox" checked={useCustom} onChange={e => setUseCustom(e.target.checked)} className="accent-brand-500" />
+                      <span className="text-[var(--text-muted)]">Format kustom</span>
+                    </label>
+                    {useCustom && <input value={customFormat} onChange={e => setCustomFormat(e.target.value)} placeholder="cth: Hal. {n} dari {total}" className="input text-xs" />}
+                    <p className="text-[10px] text-[var(--text-subtle)] mt-1">Gunakan {"{n}"} nomor halaman, {"{total}"} total halaman</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Ukuran: <span className="text-brand-500">{fontSize}px</span></label>
+                      <input type="range" min={8} max={32} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-brand-500" />
+                    </div>
+                    <div>
+                      <label className="label">Warna</label>
+                      <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--border)] cursor-pointer" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Mulai dari nomor</label>
+                    <input type="number" min={0} value={startNumber} onChange={e => setStartNumber(+e.target.value || 1)} className="input" />
+                  </div>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" checked={skipFirst} onChange={e => setSkipFirst(e.target.checked)} className="w-4 h-4 accent-brand-500 rounded" />
+                    <span className="text-sm text-[var(--text-muted)]">Lewati halaman pertama (cover)</span>
                   </label>
-                  {useCustom && <input value={customFormat} onChange={e => setCustomFormat(e.target.value)} placeholder="cth: Hal. {n} dari {total}" className="input text-xs" />}
-                  <p className="text-[10px] text-[var(--text-subtle)] mt-1">Gunakan {"{n}"} nomor halaman, {"{total}"} total halaman</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">Ukuran: <span className="text-brand-500">{fontSize}px</span></label>
-                    <input type="range" min={8} max={32} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-brand-500" />
-                  </div>
-                  <div>
-                    <label className="label">Warna</label>
-                    <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--border)] cursor-pointer" />
-                  </div>
+                <div className="sidebar-footer space-y-2">
+                  <Button onClick={handleApply} loading={processing} fullWidth size="lg" icon={<Hash className="w-5 h-5"/>}>
+                    {processing ? "Memproses…" : "Tambah Nomor Halaman"}
+                  </Button>
+                  <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">Ganti file</Button>
                 </div>
-                <div>
-                  <label className="label">Mulai dari nomor</label>
-                  <input type="number" min={0} value={startNumber} onChange={e => setStartNumber(+e.target.value || 1)} className="input" />
-                </div>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={skipFirst} onChange={e => setSkipFirst(e.target.checked)} className="w-4 h-4 accent-brand-500 rounded" />
-                  <span className="text-sm text-[var(--text-muted)]">Lewati halaman pertama (cover)</span>
-                </label>
               </div>
-              <div className="sidebar-footer space-y-2">
-                <Button onClick={handleApply} loading={processing} fullWidth size="lg" icon={<Hash className="w-5 h-5"/>}>
-                  {processing ? "Memproses…" : "Tambah Nomor Halaman"}
-                </Button>
-                <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">Ganti file</Button>
-              </div>
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+            </>
+          )}
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }

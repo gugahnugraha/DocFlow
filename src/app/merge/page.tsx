@@ -7,6 +7,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -81,90 +82,92 @@ export default function MergePage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <Header activePath="/merge" />
-      <main className="flex min-h-[calc(100vh-60px)]">
-        {files.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-lg">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <FileType className="w-8 h-8 text-brand-500" />
-                </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Merge PDF</h1>
-                <p className="text-sm text-[var(--text-muted)]">Gabungkan beberapa file PDF menjadi satu dokumen</p>
-              </div>
-              <DropZone onFiles={addFiles} accept="application/pdf" multiple />
-              <div className="mt-5 grid grid-cols-4 gap-2">
-                {[
-                  { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
-                  { icon: <Plus className="w-4 h-4" />, label: "Tambah File" },
-                  { icon: <X className="w-4 h-4" />, label: "Hapus File" },
-                  { icon: <FileType className="w-4 h-4" />, label: "Merge PDF" },
-                ].map(f => (
-                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
-                    <span className="text-brand-500">{f.icon}</span>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+    <ProtectedRoute>
+      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+        <Header activePath="/merge" />
+        <main className="flex min-h-[calc(100vh-60px)]">
+          {files.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-lg">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileType className="w-8 h-8 text-brand-500" />
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {files.map(item => (
-                  <FileThumb key={item.id} item={item} onRemove={() => remove(item.id)} />
-                ))}
-                <label className="cursor-pointer">
-                  <input type="file" accept="application/pdf" multiple onChange={e => e.target.files && addFiles(Array.from(e.target.files))} className="hidden" />
-                  <div className="flex flex-col items-center justify-center min-h-[140px] rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-orange-300 hover:bg-gradient-to-br hover:from-orange-50 hover:to-red-50 transition-all duration-300 text-[var(--text-subtle)] gap-2 hover:-translate-y-0.5">
-                    <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
-                      <Plus className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-xs font-semibold">Tambah</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div className="sidebar">
-              <div className="sidebar-header">
-                <h2 className="font-bold text-[var(--text)] text-lg">Merge PDF</h2>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">{files.length} file dipilih</p>
-              </div>
-              <div className="sidebar-body">
-                <div className="card p-3 bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
-                  <p className="text-xs text-orange-700 leading-relaxed">
-                    Seret untuk mengubah urutan file, atau klik <strong>Tambah</strong> untuk menambah lebih banyak file PDF.
-                  </p>
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Merge PDF</h1>
+                  <p className="text-sm text-[var(--text-muted)]">Gabungkan beberapa file PDF menjadi satu dokumen</p>
                 </div>
-                <div className="space-y-1.5">
-                  {files.map((f, i) => (
-                    <div key={f.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-200">
-                      <span className="text-xs font-bold text-orange-500 w-5">{i + 1}</span>
-                      <p className="text-xs text-[var(--text)] truncate flex-1">{f.file.name}</p>
-                      <button onClick={() => remove(f.id)} className="text-[var(--text-subtle)] hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                <DropZone onFiles={addFiles} accept="application/pdf" multiple />
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  {[
+                    { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
+                    { icon: <Plus className="w-4 h-4" />, label: "Tambah File" },
+                    { icon: <X className="w-4 h-4" />, label: "Hapus File" },
+                    { icon: <FileType className="w-4 h-4" />, label: "Merge PDF" },
+                  ].map(f => (
+                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                      <span className="text-brand-500">{f.icon}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="sidebar-footer space-y-2">
-                <Button onClick={handleMerge} loading={processing} disabled={files.length < 2} fullWidth size="lg"
-                  icon={<FileType className="w-5 h-5" />}>
-                  {processing ? "Memproses…" : "Merge PDF"}
-                </Button>
-                <Link href="/">
-                  <Button variant="ghost" fullWidth size="sm">
-                    Ganti file
-                  </Button>
-                </Link>
-              </div>
             </div>
-          </>
-        )}
-      </main>
-    </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                  {files.map(item => (
+                    <FileThumb key={item.id} item={item} onRemove={() => remove(item.id)} />
+                  ))}
+                  <label className="cursor-pointer">
+                    <input type="file" accept="application/pdf" multiple onChange={e => e.target.files && addFiles(Array.from(e.target.files))} className="hidden" />
+                    <div className="flex flex-col items-center justify-center min-h-[140px] rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-orange-300 hover:bg-gradient-to-br hover:from-orange-50 hover:to-red-50 transition-all duration-300 text-[var(--text-subtle)] gap-2 hover:-translate-y-0.5">
+                      <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <Plus className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-xs font-semibold">Tambah</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="sidebar">
+                <div className="sidebar-header">
+                  <h2 className="font-bold text-[var(--text)] text-lg">Merge PDF</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{files.length} file dipilih</p>
+                </div>
+                <div className="sidebar-body">
+                  <div className="card p-3 bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+                    <p className="text-xs text-orange-700 leading-relaxed">
+                      Seret untuk mengubah urutan file, atau klik <strong>Tambah</strong> untuk menambah lebih banyak file PDF.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    {files.map((f, i) => (
+                      <div key={f.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-200">
+                        <span className="text-xs font-bold text-orange-500 w-5">{i + 1}</span>
+                        <p className="text-xs text-[var(--text)] truncate flex-1">{f.file.name}</p>
+                        <button onClick={() => remove(f.id)} className="text-[var(--text-subtle)] hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="sidebar-footer space-y-2">
+                  <Button onClick={handleMerge} loading={processing} disabled={files.length < 2} fullWidth size="lg"
+                    icon={<FileType className="w-5 h-5" />}>
+                    {processing ? "Memproses…" : "Merge PDF"}
+                  </Button>
+                  <Link href="/">
+                    <Button variant="ghost" fullWidth size="sm">
+                      Ganti file
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }

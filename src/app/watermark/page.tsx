@@ -6,6 +6,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -124,105 +125,107 @@ export default function WatermarkPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <Header activePath="/watermark" />
-      <main className="flex min-h-[calc(100vh-60px)]">
-        {!file ? (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-lg">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Stamp className="w-8 h-8 text-brand-500" />
-                </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Watermark PDF</h1>
-                <p className="text-sm text-[var(--text-muted)]">Tambahkan teks watermark pada setiap halaman PDF</p>
-              </div>
-              <DropZone onFiles={loadFile} accept="application/pdf" />
-              <div className="mt-5 grid grid-cols-4 gap-2">
-                {[
-                  { icon: <Stamp className="w-4 h-4" />, label: "Pilih File" },
-                  { icon: <Stamp className="w-4 h-4" />, label: "Teks" },
-                  { icon: <Stamp className="w-4 h-4" />, label: "Posisi" },
-                  { icon: <Stamp className="w-4 h-4" />, label: "Terapkan" },
-                ].map(f => (
-                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
-                    <span className="text-brand-500">{f.icon}</span>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+    <ProtectedRoute>
+      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+        <Header activePath="/watermark" />
+        <main className="flex min-h-[calc(100vh-60px)]">
+          {!file ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-lg">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Stamp className="w-8 h-8 text-brand-500" />
                   </div>
-                ))}
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Watermark PDF</h1>
+                  <p className="text-sm text-[var(--text-muted)]">Tambahkan teks watermark pada setiap halaman PDF</p>
+                </div>
+                <DropZone onFiles={loadFile} accept="application/pdf" />
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  {[
+                    { icon: <Stamp className="w-4 h-4" />, label: "Pilih File" },
+                    { icon: <Stamp className="w-4 h-4" />, label: "Teks" },
+                    { icon: <Stamp className="w-4 h-4" />, label: "Posisi" },
+                    { icon: <Stamp className="w-4 h-4" />, label: "Terapkan" },
+                  ].map(f => (
+                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                      <span className="text-brand-500">{f.icon}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-auto p-8 flex flex-col items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage <= 1} variant="outline" size="sm">← Prev</Button>
-                <span className="text-sm text-[var(--text-muted)] font-medium px-2">{previewPage} / {totalPages}</span>
-                <Button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage >= totalPages} variant="outline" size="sm">Next →</Button>
+          ) : (
+            <>
+              <div className="flex-1 overflow-auto p-8 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => setPreviewPage(p => Math.max(1, p - 1))} disabled={previewPage <= 1} variant="outline" size="sm">← Prev</Button>
+                  <span className="text-sm text-[var(--text-muted)] font-medium px-2">{previewPage} / {totalPages}</span>
+                  <Button onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))} disabled={previewPage >= totalPages} variant="outline" size="sm">Next →</Button>
+                </div>
+                <Preview file={file} pageNumber={previewPage} text={text} color={color} opacity={opacity} fontSize={fontSize} position={position} rotation={rotation} />
               </div>
-              <Preview file={file} pageNumber={previewPage} text={text} color={color} opacity={opacity} fontSize={fontSize} position={position} rotation={rotation} />
-            </div>
-            <div className="sidebar">
-              <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Watermark PDF</h2></div>
-              <div className="sidebar-body">
-                <div>
-                  <label className="label">Teks Watermark</label>
-                  <input value={text} onChange={e => setText(e.target.value)} placeholder="cth: CONFIDENTIAL" className="input" />
-                </div>
-                <div>
-                  <label className="label">Ukuran Font: <span className="text-brand-500">{fontSize}px</span></label>
-                  <input type="range" min={12} max={120} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-brand-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="sidebar">
+                <div className="sidebar-header"><h2 className="font-bold text-[var(--text)] text-lg">Watermark PDF</h2></div>
+                <div className="sidebar-body">
                   <div>
-                    <label className="label">Warna</label>
-                    <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--border)] cursor-pointer" />
+                    <label className="label">Teks Watermark</label>
+                    <input value={text} onChange={e => setText(e.target.value)} placeholder="cth: CONFIDENTIAL" className="input" />
                   </div>
                   <div>
-                    <label className="label">Opacity: <span className="text-brand-500">{Math.round(opacity * 100)}%</span></label>
-                    <input type="range" min={5} max={100} value={Math.round(opacity * 100)} onChange={e => setOpacity(+e.target.value / 100)} className="w-full accent-brand-500 mt-2" />
+                    <label className="label">Ukuran Font: <span className="text-brand-500">{fontSize}px</span></label>
+                    <input type="range" min={12} max={120} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-full accent-brand-500" />
                   </div>
-                </div>
-                <div>
-                  <label className="label">Posisi</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {POSITIONS.map(p => (
-                      <button key={p.id} onClick={() => setPosition(p.id)}
-                        className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border-2 transition-all ${position === p.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
-                        {p.label}
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Warna</label>
+                      <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--border)] cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="label">Opacity: <span className="text-brand-500">{Math.round(opacity * 100)}%</span></label>
+                      <input type="range" min={5} max={100} value={Math.round(opacity * 100)} onChange={e => setOpacity(+e.target.value / 100)} className="w-full accent-brand-500 mt-2" />
+                    </div>
                   </div>
-                </div>
-                {position === "diagonal" && (
                   <div>
-                    <label className="label">Rotasi: <span className="text-brand-500">{rotation}°</span></label>
-                    <input type="range" min={0} max={90} value={rotation} onChange={e => setRotation(+e.target.value)} className="w-full accent-brand-500" />
+                    <label className="label">Posisi</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {POSITIONS.map(p => (
+                        <button key={p.id} onClick={() => setPosition(p.id)}
+                          className={`py-1.5 px-1 text-[11px] font-semibold rounded-lg border-2 transition-all ${position === p.id ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
-                <div>
-                  <label className="label">Terapkan ke</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {(["all","odd","even"] as const).map(v => (
-                      <button key={v} onClick={() => setApplyTo(v)}
-                        className={`py-1.5 text-xs font-semibold rounded-lg border-2 transition-all ${applyTo === v ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
-                        {v === "all" ? "Semua" : v === "odd" ? "Ganjil" : "Genap"}
-                      </button>
-                    ))}
+                  {position === "diagonal" && (
+                    <div>
+                      <label className="label">Rotasi: <span className="text-brand-500">{rotation}°</span></label>
+                      <input type="range" min={0} max={90} value={rotation} onChange={e => setRotation(+e.target.value)} className="w-full accent-brand-500" />
+                    </div>
+                  )}
+                  <div>
+                    <label className="label">Terapkan ke</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["all","odd","even"] as const).map(v => (
+                        <button key={v} onClick={() => setApplyTo(v)}
+                          className={`py-1.5 text-xs font-semibold rounded-lg border-2 transition-all ${applyTo === v ? "border-brand-500 bg-brand-50 text-brand-600" : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"}`}>
+                          {v === "all" ? "Semua" : v === "odd" ? "Ganjil" : "Genap"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
+                <div className="sidebar-footer space-y-2">
+                  <Button onClick={handleApply} loading={processing} disabled={!text.trim()} fullWidth size="lg" icon={<Stamp className="w-5 h-5"/>}>
+                    {processing ? "Memproses…" : "Tambah Watermark"}
+                  </Button>
+                  <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">Ganti file</Button>
+                </div>
               </div>
-              <div className="sidebar-footer space-y-2">
-                <Button onClick={handleApply} loading={processing} disabled={!text.trim()} fullWidth size="lg" icon={<Stamp className="w-5 h-5"/>}>
-                  {processing ? "Memproses…" : "Tambah Watermark"}
-                </Button>
-                <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">Ganti file</Button>
-              </div>
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+            </>
+          )}
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }

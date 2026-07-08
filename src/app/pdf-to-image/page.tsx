@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
 import PdfThumb from "@/components/PdfThumb";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -99,113 +100,115 @@ export default function PdfToImagePage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <Header activePath="/pdf-to-image" />
-      <main className="flex min-h-[calc(100vh-60px)]">
-        {!file ? (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-lg">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <ImageIcon className="w-8 h-8 text-brand-500" />
-                </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">PDF ke Gambar</h1>
-                <p className="text-sm text-[var(--text-muted)]">Konversi halaman PDF menjadi gambar JPG atau PNG berkualitas tinggi</p>
-              </div>
-              <DropZone onFiles={loadFile} accept="application/pdf" />
-              <div className="mt-5 grid grid-cols-4 gap-2">
-                {[
-                  { icon: <ImageIcon className="w-4 h-4" />, label: "Pilih File" },
-                  { icon: <ImageIcon className="w-4 h-4" />, label: "JPG" },
-                  { icon: <ImageIcon className="w-4 h-4" />, label: "PNG" },
-                  { icon: <Download className="w-4 h-4" />, label: "Download" },
-                ].map(f => (
-                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
-                    <span className="text-brand-500">{f.icon}</span>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+    <ProtectedRoute>
+      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+        <Header activePath="/pdf-to-image" />
+        <main className="flex min-h-[calc(100vh-60px)]">
+          {!file ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-lg">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <ImageIcon className="w-8 h-8 text-brand-500" />
                   </div>
-                ))}
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">PDF ke Gambar</h1>
+                  <p className="text-sm text-[var(--text-muted)]">Konversi halaman PDF menjadi gambar JPG atau PNG berkualitas tinggi</p>
+                </div>
+                <DropZone onFiles={loadFile} accept="application/pdf" />
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  {[
+                    { icon: <ImageIcon className="w-4 h-4" />, label: "Pilih File" },
+                    { icon: <ImageIcon className="w-4 h-4" />, label: "JPG" },
+                    { icon: <ImageIcon className="w-4 h-4" />, label: "PNG" },
+                    { icon: <Download className="w-4 h-4" />, label: "Download" },
+                  ].map(f => (
+                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                      <span className="text-brand-500">{f.icon}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="flex items-center gap-2 mb-4 bg-white rounded-xl p-2.5 border border-[var(--border)]">
-                <Button onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: !allSelected })))}
-                  variant="outline" size="sm">
-                  {allSelected ? "Hapus semua" : "Pilih semua"}
-                </Button>
-                <span className="text-xs text-[var(--text-subtle)]">{selectedCount} / {pages.length} dipilih</span>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
-                {pages.map(pg => (
-                  <PageCard key={pg.number} pdfDoc={pdfDoc} pageNumber={pg.number}
-                    selected={pg.selected} onToggle={() => toggle(pg.number)} />
-                ))}
-              </div>
-            </div>
-
-            <div className="sidebar">
-              <div className="sidebar-header">
-                <h2 className="font-bold text-[var(--text)] text-lg">PDF ke Gambar</h2>
-              </div>
-              <div className="sidebar-body">
-                <div>
-                  <label className="label">Format Output</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["jpg", "png"] as const).map(f => (
-                      <button key={f} onClick={() => setFormat(f)}
-                        className={`py-3 rounded-xl border-2 font-bold text-sm uppercase transition-all ${
-                          format === f
-                            ? "border-brand-500 bg-brand-50 text-brand-600"
-                            : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"
-                        }`}>
-                        {f}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-[var(--text-subtle)] mt-1.5">
-                    {format === "jpg" ? "Ukuran lebih kecil, cocok untuk foto" : "Lossless, cocok untuk teks & grafis"}
-                  </p>
-                </div>
-                <div>
-                  <label className="label">Kualitas (DPI)</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {[{ v: 72, label: "Rendah" }, { v: 150, label: "Sedang" }, { v: 300, label: "Tinggi" }].map(opt => (
-                      <button key={opt.v} onClick={() => setDpi(opt.v)}
-                        className={`py-2 rounded-xl border-2 transition-all text-center ${
-                          dpi === opt.v
-                            ? "border-brand-500 bg-brand-50 text-brand-600"
-                            : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"
-                        }`}>
-                        <div className="text-xs font-bold">{opt.label}</div>
-                        <div className="text-[10px] opacity-70">{opt.v} DPI</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="card p-3 bg-blue-50 border-blue-100">
-                  <p className="text-xs text-blue-700">
-                    {selectedCount > 1 ? `${selectedCount} halaman → file ZIP` : "1 halaman → file gambar"}
-                  </p>
-                </div>
-              </div>
-              <div className="sidebar-footer space-y-2">
-                <Button onClick={handleConvert} loading={processing} disabled={selectedCount === 0}
-                  fullWidth size="lg" icon={<Download className="w-5 h-5" />}>
-                  {processing ? "Mengkonversi…" : `Konversi ke ${format.toUpperCase()}`}
-                </Button>
-                <Link href="/">
-                  <Button variant="ghost" fullWidth size="sm">
-                    Ganti file
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto p-5">
+                <div className="flex items-center gap-2 mb-4 bg-white rounded-xl p-2.5 border border-[var(--border)]">
+                  <Button onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: !allSelected })))}
+                    variant="outline" size="sm">
+                    {allSelected ? "Hapus semua" : "Pilih semua"}
                   </Button>
-                </Link>
+                  <span className="text-xs text-[var(--text-subtle)]">{selectedCount} / {pages.length} dipilih</span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3">
+                  {pages.map(pg => (
+                    <PageCard key={pg.number} pdfDoc={pdfDoc} pageNumber={pg.number}
+                      selected={pg.selected} onToggle={() => toggle(pg.number)} />
+                  ))}
+                </div>
               </div>
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+
+              <div className="sidebar">
+                <div className="sidebar-header">
+                  <h2 className="font-bold text-[var(--text)] text-lg">PDF ke Gambar</h2>
+                </div>
+                <div className="sidebar-body">
+                  <div>
+                    <label className="label">Format Output</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["jpg", "png"] as const).map(f => (
+                        <button key={f} onClick={() => setFormat(f)}
+                          className={`py-3 rounded-xl border-2 font-bold text-sm uppercase transition-all ${
+                            format === f
+                              ? "border-brand-500 bg-brand-50 text-brand-600"
+                              : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"
+                          }`}>
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[var(--text-subtle)] mt-1.5">
+                      {format === "jpg" ? "Ukuran lebih kecil, cocok untuk foto" : "Lossless, cocok untuk teks & grafis"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="label">Kualitas (DPI)</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[{ v: 72, label: "Rendah" }, { v: 150, label: "Sedang" }, { v: 300, label: "Tinggi" }].map(opt => (
+                        <button key={opt.v} onClick={() => setDpi(opt.v)}
+                          className={`py-2 rounded-xl border-2 transition-all text-center ${
+                            dpi === opt.v
+                              ? "border-brand-500 bg-brand-50 text-brand-600"
+                              : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"
+                          }`}>
+                          <div className="text-xs font-bold">{opt.label}</div>
+                          <div className="text-[10px] opacity-70">{opt.v} DPI</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="card p-3 bg-blue-50 border-blue-100">
+                    <p className="text-xs text-blue-700">
+                      {selectedCount > 1 ? `${selectedCount} halaman → file ZIP` : "1 halaman → file gambar"}
+                    </p>
+                  </div>
+                </div>
+                <div className="sidebar-footer space-y-2">
+                  <Button onClick={handleConvert} loading={processing} disabled={selectedCount === 0}
+                    fullWidth size="lg" icon={<Download className="w-5 h-5" />}>
+                    {processing ? "Mengkonversi…" : `Konversi ke ${format.toUpperCase()}`}
+                  </Button>
+                  <Link href="/">
+                    <Button variant="ghost" fullWidth size="sm">
+                      Ganti file
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }

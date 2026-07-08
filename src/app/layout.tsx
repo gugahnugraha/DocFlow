@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/Toast";
+import AuthSessionProvider from "@/components/AuthSessionProvider";
 
 export const metadata: Metadata = {
   title: "DocFlow - Alat PDF Online Gratis",
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="antialiased">
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <AuthSessionProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { FileType, Menu, X, ChevronDown, Layers } from "lucide-react";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { FileType, Menu, X, ChevronDown, Layers, LogOut, User } from "lucide-react";
 
 const TOOL_GROUPS = [
   {
@@ -55,9 +56,12 @@ const QUICK_LINKS = [
 ];
 
 export default function Header({ activePath }: { activePath?: string }) {
+  const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // close dropdown on outside click
@@ -65,6 +69,9 @@ export default function Header({ activePath }: { activePath?: string }) {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -185,12 +192,57 @@ export default function Header({ activePath }: { activePath?: string }) {
 
         {/* ── Right side ── */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button className="hidden md:block btn-ghost btn-sm rounded-xl text-sm font-semibold px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-all duration-200">
-            Masuk
-          </button>
-          <button className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5">
-            Daftar Gratis
-          </button>
+          {session?.user ? (
+            // User is logged in
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen(v => !v)}
+                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--bg)] transition-all duration-200"
+              >
+                {session.user.image ? (
+                  <img
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center text-white font-semibold">
+                    {session.user.name?.[0] || "U"}
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-[var(--text)]">
+                  {session.user.name}
+                </span>
+              </button>
+              {userMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-[var(--border)] rounded-xl shadow-lg p-2">
+                  <button
+                    onClick={() => signOut()}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-muted)] hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Keluar
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            // User is not logged in
+            <>
+              <button
+                onClick={() => signIn()}
+                className="hidden md:block btn-ghost btn-sm rounded-xl text-sm font-semibold px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-all duration-200"
+              >
+                Masuk
+              </button>
+              <button
+                onClick={() => signIn()}
+                className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
+              >
+                Daftar Gratis
+              </button>
+            </>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -231,12 +283,29 @@ export default function Header({ activePath }: { activePath?: string }) {
               </div>
             ))}
             <div className="pt-3 border-t border-[var(--border)] grid grid-cols-2 gap-2">
-              <button className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)]">
-                Masuk
-              </button>
-              <button className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold">
-                Daftar Gratis
-              </button>
+              {session?.user ? (
+                <button
+                  onClick={() => signOut()}
+                  className="col-span-2 py-2.5 border border-red-200 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50"
+                >
+                  Keluar
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => signIn()}
+                    className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)]"
+                  >
+                    Masuk
+                  </button>
+                  <button
+                    onClick={() => signIn()}
+                    className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold"
+                  >
+                    Daftar Gratis
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

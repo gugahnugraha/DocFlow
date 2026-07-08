@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
 import PdfThumb from "@/components/PdfThumb";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
@@ -248,224 +249,226 @@ export default function SplitPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <Header activePath="/split" />
-      <main className="flex min-h-[calc(100vh-60px)]">
+    <ProtectedRoute>
+      <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+        <Header activePath="/split" />
+        <main className="flex min-h-[calc(100vh-60px)]">
 
-        {/* ── Upload state ── */}
-        {!file ? (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-lg">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Scissors className="w-8 h-8 text-brand-500" />
-                </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Split PDF</h1>
-                <p className="text-sm text-[var(--text-muted)]">Pisahkan file PDF menjadi beberapa dokumen</p>
-              </div>
-              <DropZone onFiles={loadFile} accept="application/pdf" />
-              <div className="mt-5 grid grid-cols-4 gap-2">
-                {[
-                  { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
-                  { icon: <Scissors className="w-4 h-4" />, label: "Split Range" },
-                  { icon: <FileText className="w-4 h-4" />, label: "Split Halaman" },
-                  { icon: <FileText className="w-4 h-4" />, label: "Ekspor File" },
-                ].map(f => (
-                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
-                    <span className="text-brand-500">{f.icon}</span>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+          {/* ── Upload state ── */}
+          {!file ? (
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-lg">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Scissors className="w-8 h-8 text-brand-500" />
                   </div>
-                ))}
+                  <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Split PDF</h1>
+                  <p className="text-sm text-[var(--text-muted)]">Pisahkan file PDF menjadi beberapa dokumen</p>
+                </div>
+                <DropZone onFiles={loadFile} accept="application/pdf" />
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  {[
+                    { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
+                    { icon: <Scissors className="w-4 h-4" />, label: "Split Range" },
+                    { icon: <FileText className="w-4 h-4" />, label: "Split Halaman" },
+                    { icon: <FileText className="w-4 h-4" />, label: "Ekspor File" },
+                  ].map(f => (
+                    <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                      <span className="text-brand-500">{f.icon}</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-        ) : (
-          <>
-            {/* ── Main area ── */}
-            <div className="flex-1 overflow-y-auto p-6">
+          ) : (
+            <>
+              {/* ── Main area ── */}
+              <div className="flex-1 overflow-y-auto p-6">
 
-              {splitMode === "range" ? (
-                /* Range mode */
-                <div className="max-w-3xl mx-auto space-y-4">
-                  {ranges.map((range, i) => (
-                    <RangeCard
-                      key={i}
-                      pdfDoc={pdfDoc}
-                      range={range}
-                      index={i}
-                      totalPages={pages.length}
-                      isOnly={ranges.length === 1}
-                      onUpdate={(field, val) => updateRange(i, field, val)}
-                      onRemove={() => removeRange(i)}
-                    />
-                  ))}
-
-                  {/* Add range button */}
-                  {ranges[ranges.length - 1]?.to < pages.length && (
-                    <button
-                      onClick={addRange}
-                      className="w-full py-4 rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-brand-300 hover:bg-brand-50/40 transition-all flex items-center justify-center gap-2 text-sm font-semibold text-[var(--text-muted)] hover:text-brand-600"
-                    >
-                      <div className="w-6 h-6 bg-brand-500 rounded-lg flex items-center justify-center">
-                        <Plus className="w-4 h-4 text-white" />
-                      </div>
-                      Tambah Range Baru
-                    </button>
-                  )}
-                </div>
-
-              ) : (
-                /* Pages mode */
-                <div className="max-w-4xl mx-auto">
-                  <div className="flex items-center justify-between mb-4 bg-white rounded-xl p-3 border border-[var(--border)]">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-[var(--text-muted)]">{pages.length} halaman</span>
-                      <span className="text-xs text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full font-semibold">
-                        {selectedCount} dipilih
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: true })))}
-                        className="text-xs font-medium text-[var(--text-muted)] hover:text-brand-600 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors"
-                      >
-                        Pilih semua
-                      </button>
-                      <button
-                        onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: false })))}
-                        className="text-xs font-medium text-[var(--text-muted)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                      >
-                        Hapus semua
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-                    {pages.map(pg => (
-                      <PageCard
-                        key={pg.number} pdfDoc={pdfDoc} pageNumber={pg.number}
-                        selected={pg.selected}
-                        onToggle={extractMode === "select" ? () => toggle(pg.number) : undefined}
+                {splitMode === "range" ? (
+                  /* Range mode */
+                  <div className="max-w-3xl mx-auto space-y-4">
+                    {ranges.map((range, i) => (
+                      <RangeCard
+                        key={i}
+                        pdfDoc={pdfDoc}
+                        range={range}
+                        index={i}
+                        totalPages={pages.length}
+                        isOnly={ranges.length === 1}
+                        onUpdate={(field, val) => updateRange(i, field, val)}
+                        onRemove={() => removeRange(i)}
                       />
                     ))}
+
+                    {/* Add range button */}
+                    {ranges[ranges.length - 1]?.to < pages.length && (
+                      <button
+                        onClick={addRange}
+                        className="w-full py-4 rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-brand-300 hover:bg-brand-50/40 transition-all flex items-center justify-center gap-2 text-sm font-semibold text-[var(--text-muted)] hover:text-brand-600"
+                      >
+                        <div className="w-6 h-6 bg-brand-500 rounded-lg flex items-center justify-center">
+                          <Plus className="w-4 h-4 text-white" />
+                        </div>
+                        Tambah Range Baru
+                      </button>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
 
-            {/* ── Sidebar ── */}
-            <div className="sidebar">
-              <div className="sidebar-header">
-                <h2 className="font-bold text-[var(--text)] text-lg">Split PDF</h2>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5 mb-3">
-                  {file.name} · {pages.length} halaman · {(file.size / 1024).toFixed(0)} KB
-                </p>
-                {/* Mode tabs */}
-                <div className="flex gap-1 bg-[var(--bg)] rounded-xl p-1">
-                  {(["range", "pages"] as const).map(m => (
-                    <button key={m} onClick={() => setSplitMode(m)}
-                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                        splitMode === m
-                          ? "bg-white text-[var(--text)] shadow-sm"
-                          : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                      }`}>
-                      {m === "range" ? "📄 Range" : "🗂 Halaman"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="sidebar-body">
-                {/* Range mode description */}
-                {splitMode === "range" && (
-                  <div className="card p-3 bg-slate-50">
-                    <p className="text-xs font-semibold text-[var(--text)] mb-1">Mode Range</p>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Pisahkan PDF berdasarkan rentang halaman. Setiap range menjadi file terpisah.
-                    </p>
-                  </div>
-                )}
-
-                {/* Pages mode extract options */}
-                {splitMode === "pages" && (
-                  <div>
-                    <label className="label">Mode Ekstrak</label>
-                    <div className="flex gap-1.5">
-                      {(["all", "select"] as const).map(m => (
-                        <button key={m}
-                          onClick={() => {
-                            setExtractMode(m);
-                            if (m === "all") setPages(p => p.map(pg => ({ ...pg, selected: true })));
-                          }}
-                          className={`flex-1 py-2 text-xs font-semibold rounded-xl border-2 transition-all ${
-                            extractMode === m
-                              ? "border-brand-500 bg-brand-50 text-brand-600"
-                              : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"
-                          }`}>
-                          {m === "all" ? "Semua" : "Pilihan"}
+                ) : (
+                  /* Pages mode */
+                  <div className="max-w-4xl mx-auto">
+                    <div className="flex items-center justify-between mb-4 bg-white rounded-xl p-3 border border-[var(--border)]">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-[var(--text-muted)]">{pages.length} halaman</span>
+                        <span className="text-xs text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full font-semibold">
+                          {selectedCount} dipilih
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: true })))}
+                          className="text-xs font-medium text-[var(--text-muted)] hover:text-brand-600 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors"
+                        >
+                          Pilih semua
                         </button>
+                        <button
+                          onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: false })))}
+                          className="text-xs font-medium text-[var(--text-muted)] hover:text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          Hapus semua
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                      {pages.map(pg => (
+                        <PageCard
+                          key={pg.number} pdfDoc={pdfDoc} pageNumber={pg.number}
+                          selected={pg.selected}
+                          onToggle={extractMode === "select" ? () => toggle(pg.number) : undefined}
+                        />
                       ))}
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Summary stats */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="card p-3 text-center">
-                    <p className="text-2xl font-extrabold text-brand-500">{pdfCount}</p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">File output</p>
-                  </div>
-                  <div className="card p-3 text-center">
-                    <p className="text-2xl font-extrabold text-[var(--text)]">
-                      {splitMode === "pages" ? selectedCount : ranges.reduce((acc, r) => acc + Math.max(0, r.to - r.from + 1), 0)}
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Hal. diproses</p>
-                  </div>
-                </div>
-
-                {/* Merge toggle */}
-                <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-[var(--border)] hover:border-brand-200 hover:bg-brand-50/30 transition-all">
-                  <input type="checkbox" checked={mergeAll} onChange={e => setMergeAll(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 accent-brand-500 rounded flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text)]">Gabung ke satu PDF</p>
-                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                      Semua bagian digabung menjadi 1 file PDF
-                    </p>
-                  </div>
-                </label>
-
-                {/* Output info */}
-                <div className="card p-3 bg-emerald-50 border-emerald-100">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <p className="text-xs font-semibold text-emerald-700">Output</p>
-                  </div>
-                  <p className="text-xs text-emerald-700 leading-relaxed">
-                    {mergeAll
-                      ? "Menghasilkan 1 file PDF"
-                      : pdfCount > 1
-                      ? `Menghasilkan ${pdfCount} file PDF dalam 1 file ZIP`
-                      : "Menghasilkan 1 file PDF"}
+              {/* ── Sidebar ── */}
+              <div className="sidebar">
+                <div className="sidebar-header">
+                  <h2 className="font-bold text-[var(--text)] text-lg">Split PDF</h2>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5 mb-3">
+                    {file.name} · {pages.length} halaman · {(file.size / 1024).toFixed(0)} KB
                   </p>
+                  {/* Mode tabs */}
+                  <div className="flex gap-1 bg-[var(--bg)] rounded-xl p-1">
+                    {(["range", "pages"] as const).map(m => (
+                      <button key={m} onClick={() => setSplitMode(m)}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                          splitMode === m
+                            ? "bg-white text-[var(--text)] shadow-sm"
+                            : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                        }`}>
+                        {m === "range" ? "📄 Range" : "🗂 Halaman"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sidebar-body">
+                  {/* Range mode description */}
+                  {splitMode === "range" && (
+                    <div className="card p-3 bg-slate-50">
+                      <p className="text-xs font-semibold text-[var(--text)] mb-1">Mode Range</p>
+                      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                        Pisahkan PDF berdasarkan rentang halaman. Setiap range menjadi file terpisah.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Pages mode extract options */}
+                  {splitMode === "pages" && (
+                    <div>
+                      <label className="label">Mode Ekstrak</label>
+                      <div className="flex gap-1.5">
+                        {(["all", "select"] as const).map(m => (
+                          <button key={m}
+                            onClick={() => {
+                              setExtractMode(m);
+                              if (m === "all") setPages(p => p.map(pg => ({ ...pg, selected: true })));
+                            }}
+                            className={`flex-1 py-2 text-xs font-semibold rounded-xl border-2 transition-all ${
+                              extractMode === m
+                                ? "border-brand-500 bg-brand-50 text-brand-600"
+                                : "border-[var(--border)] text-[var(--text-muted)] hover:border-brand-200"
+                            }`}>
+                            {m === "all" ? "Semua" : "Pilihan"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Summary stats */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="card p-3 text-center">
+                      <p className="text-2xl font-extrabold text-brand-500">{pdfCount}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] mt-0.5">File output</p>
+                    </div>
+                    <div className="card p-3 text-center">
+                      <p className="text-2xl font-extrabold text-[var(--text)]">
+                        {splitMode === "pages" ? selectedCount : ranges.reduce((acc, r) => acc + Math.max(0, r.to - r.from + 1), 0)}
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)] mt-0.5">Hal. diproses</p>
+                    </div>
+                  </div>
+
+                  {/* Merge toggle */}
+                  <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-[var(--border)] hover:border-brand-200 hover:bg-brand-50/30 transition-all">
+                    <input type="checkbox" checked={mergeAll} onChange={e => setMergeAll(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 accent-brand-500 rounded flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text)]">Gabung ke satu PDF</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        Semua bagian digabung menjadi 1 file PDF
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Output info */}
+                  <div className="card p-3 bg-emerald-50 border-emerald-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <p className="text-xs font-semibold text-emerald-700">Output</p>
+                    </div>
+                    <p className="text-xs text-emerald-700 leading-relaxed">
+                      {mergeAll
+                        ? "Menghasilkan 1 file PDF"
+                        : pdfCount > 1
+                        ? `Menghasilkan ${pdfCount} file PDF dalam 1 file ZIP`
+                        : "Menghasilkan 1 file PDF"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="sidebar-footer space-y-2">
+                  <Button onClick={handleSplit} loading={processing} fullWidth size="lg"
+                    icon={<Scissors className="w-5 h-5" />}>
+                    {processing ? "Memproses…" : "Split PDF"}
+                  </Button>
+                  <Link href="/">
+                    <Button variant="ghost" fullWidth size="sm">
+                      Ganti file
+                    </Button>
+                  </Link>
                 </div>
               </div>
-
-              <div className="sidebar-footer space-y-2">
-                <Button onClick={handleSplit} loading={processing} fullWidth size="lg"
-                  icon={<Scissors className="w-5 h-5" />}>
-                  {processing ? "Memproses…" : "Split PDF"}
-                </Button>
-                <Link href="/">
-                  <Button variant="ghost" fullWidth size="sm">
-                    Ganti file
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+            </>
+          )}
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }
