@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Scissors, Plus, X, FileText, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
@@ -443,11 +444,11 @@ export default function SplitPage() {
                   icon={<Scissors className="w-5 h-5" />}>
                   {processing ? "Memproses…" : "Split PDF"}
                 </Button>
-                <Button
-                  onClick={() => { setFile(null); setPdfDoc(null); setPages([]); }}
-                  variant="ghost" fullWidth size="sm">
-                  Ganti file
-                </Button>
+                <Link href="/">
+                  <Button variant="ghost" fullWidth size="sm">
+                    Ganti file
+                  </Button>
+                </Link>
               </div>
             </div>
           </>

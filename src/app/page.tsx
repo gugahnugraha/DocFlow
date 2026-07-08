@@ -4,6 +4,7 @@ import {
   Stamp, Upload, Zap, Shield, Globe, ArrowRight,
   Layers, Star,
 } from "lucide-react";
+import Link from "next/link";
 import Header from "@/components/Header";
 
 /* ─── Tool definitions ─────────────────────────────────────────────────────── */
@@ -117,14 +118,14 @@ export default function Home() {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
-            <a
+            <Link
               href="/merge"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-base px-7 py-4 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 transition-all duration-300 hover:-translate-y-0.5"
             >
               <Upload className="w-5 h-5" />
               Mulai Sekarang — Gratis
               <ArrowRight className="w-4 h-4 opacity-80" />
-            </a>
+            </Link>
             <a
               href="#tools"
               className="inline-flex items-center gap-2 bg-white hover:bg-orange-50 text-[var(--text-muted)] hover:text-[var(--text)] font-semibold text-base px-6 py-4 rounded-2xl border border-[var(--border)] hover:border-orange-300 transition-all duration-300 hover:-translate-y-0.5"
@@ -163,7 +164,7 @@ export default function Home() {
                 {items.map((tool) => {
                   const Icon = tool.icon;
                   return (
-                    <a
+                    <Link
                       key={tool.id}
                       href={`/${tool.id}`}
                       className="group card-hover flex items-start gap-3.5 p-4"
@@ -178,7 +179,7 @@ export default function Home() {
 
                       {/* Text */}
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-[var(--text)] group-hover:text-brand-600 transition-colors leading-snug">
+                        <p className="text-sm font-bold text-[var(--text)] group-hover:text-orange-600 transition-colors leading-snug">
                           {tool.title}
                         </p>
                         <p className="text-xs text-[var(--text-subtle)] mt-0.5 leading-relaxed">
@@ -188,9 +189,9 @@ export default function Home() {
 
                       {/* Arrow */}
                       <ArrowRight
-                        className="w-4 h-4 text-[var(--border)] group-hover:text-brand-400 flex-shrink-0 ml-auto mt-1 transition-all duration-200 group-hover:translate-x-0.5"
+                        className="w-4 h-4 text-[var(--border)] group-hover:text-orange-400 flex-shrink-0 ml-auto mt-1 transition-all duration-200 group-hover:translate-x-0.5"
                       />
-                    </a>
+                    </Link>
                   );
                 })}
               </div>
@@ -268,14 +269,14 @@ export default function Home() {
           <p className="text-white/90 mb-8">
             Tidak perlu kartu kredit. Tidak perlu daftar. Langsung pakai.
           </p>
-          <a
+          <Link
             href="/merge"
             className="inline-flex items-center gap-2 bg-white text-orange-600 hover:bg-orange-50 font-bold text-base px-8 py-4 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
           >
             <Upload className="w-5 h-5" />
             Coba Sekarang
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -285,15 +286,15 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-8">
             {/* Brand */}
             <div className="max-w-xs">
-              <a href="/" className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+              <Link href="/" className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
                   <FileType className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-lg font-bold">
                   <span className="text-[var(--text)]">Doc</span>
-                  <span className="text-brand-500">Flow</span>
+                  <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">Flow</span>
                 </span>
-              </a>
+              </Link>
               <p className="text-sm text-[var(--text-muted)] leading-relaxed">
                 Platform alat PDF online gratis. Tidak perlu instalasi, tidak perlu daftar.
               </p>
@@ -307,9 +308,9 @@ export default function Home() {
                   <ul className="space-y-2">
                     {group.links.map((l) => (
                       <li key={l.href}>
-                        <a href={l.href} className="text-[var(--text-muted)] hover:text-brand-500 transition-colors">
+                        <Link href={l.href} className="text-[var(--text-muted)] hover:text-orange-500 transition-colors">
                           {l.label}
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>

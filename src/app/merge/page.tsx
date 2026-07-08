@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { X, Plus, FileType, Loader2 } from "lucide-react";
+import Link from "next/link";
 import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
@@ -136,12 +137,16 @@ export default function MergePage() {
                   ))}
                 </div>
               </div>
-              <div className="sidebar-footer">
+              <div className="sidebar-footer space-y-2">
                 <Button onClick={handleMerge} loading={processing} disabled={files.length < 2} fullWidth size="lg"
                   icon={<FileType className="w-5 h-5" />}>
                   {processing ? "Memproses…" : "Merge PDF"}
                 </Button>
-                {files.length < 2 && <p className="text-xs text-center text-[var(--text-subtle)] mt-2">Minimal 2 file diperlukan</p>}
+                <Link href="/">
+                  <Button variant="ghost" fullWidth size="sm">
+                    Ganti file
+                  </Button>
+                </Link>
               </div>
             </div>
           </>

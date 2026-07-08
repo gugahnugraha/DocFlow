@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { FileType, Menu, X, ChevronDown, Layers } from "lucide-react";
 
 const TOOL_GROUPS = [
@@ -85,7 +86,7 @@ export default function Header({ activePath }: { activePath?: string }) {
       <div className="max-w-screen-xl mx-auto px-5 h-[60px] flex items-center justify-between gap-4">
 
         {/* ── Logo ── */}
-        <a href="/" className="flex items-center gap-2 flex-shrink-0 group">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
           <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
             <FileType className="w-4 h-4 text-white" />
           </div>
@@ -93,7 +94,7 @@ export default function Header({ activePath }: { activePath?: string }) {
             <span className="text-[var(--text)]">Doc</span>
             <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">Flow</span>
           </span>
-        </a>
+        </Link>
 
         {/* ── Desktop Nav ── */}
         <nav className="hidden md:flex items-center gap-0.5 flex-1 px-4">
@@ -133,7 +134,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                       </p>
                       <div className="space-y-0.5">
                         {group.tools.map((tool) => (
-                          <a
+                          <Link
                             key={tool.href}
                             href={tool.href}
                             className={`flex items-start gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 group ${
@@ -153,7 +154,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                               </p>
                               <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">{tool.desc}</p>
                             </div>
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     </div>
@@ -168,7 +169,7 @@ export default function Header({ activePath }: { activePath?: string }) {
 
           {/* Quick links */}
           {QUICK_LINKS.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
@@ -178,7 +179,7 @@ export default function Header({ activePath }: { activePath?: string }) {
               }`}
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -213,7 +214,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                 </p>
                 <div className="space-y-0.5">
                   {group.tools.map((tool) => (
-                    <a
+                    <Link
                       key={tool.href}
                       href={tool.href}
                       onClick={() => setMenuOpen(false)}
@@ -224,7 +225,7 @@ export default function Header({ activePath }: { activePath?: string }) {
                       }`}
                     >
                       {tool.label}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>

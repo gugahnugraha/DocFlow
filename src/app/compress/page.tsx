@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { FileText } from "lucide-react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
@@ -103,9 +104,11 @@ export default function CompressPage() {
                   icon={<FileText className="w-5 h-5" />}>
                   {processing ? "Memproses…" : "Compress PDF"}
                 </Button>
-                <Button onClick={() => setFile(null)} variant="ghost" fullWidth size="sm">
-                  Ganti file
-                </Button>
+                <Link href="/">
+                  <Button variant="ghost" fullWidth size="sm">
+                    Ganti file
+                  </Button>
+                </Link>
               </div>
             </div>
           </>

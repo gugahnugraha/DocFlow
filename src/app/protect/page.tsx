@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
 import Button from "@/components/Button";
@@ -132,7 +133,9 @@ export default function ProtectPage() {
                 <Button onClick={handleProtect} loading={processing} disabled={!userPw} fullWidth size="lg" icon={<Lock className="w-5 h-5"/>}>
                   {processing ? "Memproses…" : "Protect PDF"}
                 </Button>
-                <Button onClick={() => { setFile(null); setSuccess(false); }} variant="ghost" fullWidth size="sm">Ganti file</Button>
+                <Link href="/">
+                  <Button variant="ghost" fullWidth size="sm">Ganti file</Button>
+                </Link>
               </div>
             </div>
           </>

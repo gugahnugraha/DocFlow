@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { ImageIcon, Download } from "lucide-react";
+import Link from "next/link";
 import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
 import DropZone from "@/components/DropZone";
@@ -183,9 +184,11 @@ export default function PdfToImagePage() {
                   fullWidth size="lg" icon={<Download className="w-5 h-5" />}>
                   {processing ? "Mengkonversi…" : `Konversi ke ${format.toUpperCase()}`}
                 </Button>
-                <Button onClick={() => { setFile(null); setPdfDoc(null); }} variant="ghost" fullWidth size="sm">
-                  Ganti file
-                </Button>
+                <Link href="/">
+                  <Button variant="ghost" fullWidth size="sm">
+                    Ganti file
+                  </Button>
+                </Link>
               </div>
             </div>
           </>
