@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Scissors, Plus, X, FileText, ChevronRight } from "lucide-react";
+import { Scissors, Plus, X, FileText, ChevronRight, FileType } from "lucide-react";
 import Link from "next/link";
 import * as pdfjsLib from "pdfjs-dist";
 import Header from "@/components/Header";
@@ -257,14 +257,26 @@ export default function SplitPage() {
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg">
               <div className="text-center mb-6">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "#ecfdf5" }}>
-                  <Scissors className="w-7 h-7 text-emerald-600" />
+                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Scissors className="w-8 h-8 text-brand-500" />
                 </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Split PDF</h1>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Split PDF</h1>
                 <p className="text-sm text-[var(--text-muted)]">Pisahkan file PDF menjadi beberapa dokumen</p>
               </div>
               <DropZone onFiles={loadFile} accept="application/pdf" />
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {[
+                  { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
+                  { icon: <Scissors className="w-4 h-4" />, label: "Split Range" },
+                  { icon: <FileText className="w-4 h-4" />, label: "Split Halaman" },
+                  { icon: <FileText className="w-4 h-4" />, label: "Ekspor File" },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <span className="text-brand-500">{f.icon}</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

@@ -38,15 +38,30 @@ export default function UnlockPage() {
         <Header activePath="/unlock" />
         <div className="card p-8 mt-6">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: "#f0fdf4" }}>
-              <LockOpen className="w-7 h-7 text-emerald-600" />
+            <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <LockOpen className="w-8 h-8 text-brand-500" />
             </div>
-            <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Unlock PDF</h1>
+            <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Unlock PDF</h1>
             <p className="text-sm text-[var(--text-muted)]">Hapus proteksi password dari dokumen PDF</p>
           </div>
 
           {!file ? (
-            <DropZone onFiles={f => setFile(f[0])} accept="application/pdf" />
+            <>
+              <DropZone onFiles={f => setFile(f[0])} accept="application/pdf" />
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {[
+                  { icon: <LockOpen className="w-4 h-4" />, label: "Pilih File" },
+                  { icon: <LockOpen className="w-4 h-4" />, label: "Password" },
+                  { icon: <LockOpen className="w-4 h-4" />, label: "Proses" },
+                  { icon: <LockOpen className="w-4 h-4" />, label: "Unduh" },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <span className="text-brand-500">{f.icon}</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3.5 bg-[var(--bg)] rounded-xl border border-[var(--border)]">

@@ -59,14 +59,27 @@ export default function ImageToPdfPage() {
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg">
               <div className="text-center mb-6">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 bg-brand-50">
-                  <ImageIcon className="w-7 h-7 text-brand-500" />
+                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <ImageIcon className="w-8 h-8 text-brand-500" />
                 </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Gambar ke PDF</h1>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Gambar ke PDF</h1>
                 <p className="text-sm text-[var(--text-muted)]">Konversi JPG, PNG menjadi satu dokumen PDF</p>
               </div>
               <DropZone onFiles={addImages} accept="image/jpeg,image/jpg,image/png,image/webp" multiple
                 label="Letakkan gambar di sini" sublabel="JPG, PNG, WebP — pilih beberapa sekaligus" />
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {[
+                  { icon: <ImageIcon className="w-4 h-4" />, label: "Pilih File" },
+                  { icon: <GripVertical className="w-4 h-4" />, label: "Drag" },
+                  { icon: <ImageIcon className="w-4 h-4" />, label: "A4" },
+                  { icon: <ImageIcon className="w-4 h-4" />, label: "Konversi" },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <span className="text-brand-500">{f.icon}</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : (

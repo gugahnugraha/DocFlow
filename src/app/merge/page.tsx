@@ -88,13 +88,26 @@ export default function MergePage() {
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg">
               <div className="text-center mb-6">
-                <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-orange-500/20">
-                  <FileType className="w-7 h-7 text-orange-600" />
+                <div className="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <FileType className="w-8 h-8 text-brand-500" />
                 </div>
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Merge PDF</h1>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-2">Merge PDF</h1>
                 <p className="text-sm text-[var(--text-muted)]">Gabungkan beberapa file PDF menjadi satu dokumen</p>
               </div>
               <DropZone onFiles={addFiles} accept="application/pdf" multiple />
+              <div className="mt-5 grid grid-cols-4 gap-2">
+                {[
+                  { icon: <FileType className="w-4 h-4" />, label: "Pilih File" },
+                  { icon: <Plus className="w-4 h-4" />, label: "Tambah File" },
+                  { icon: <X className="w-4 h-4" />, label: "Hapus File" },
+                  { icon: <FileType className="w-4 h-4" />, label: "Merge PDF" },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-[var(--border)] text-center">
+                    <span className="text-brand-500">{f.icon}</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">{f.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
