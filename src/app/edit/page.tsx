@@ -83,12 +83,13 @@ function PageThumb({ arrayBuffer, pageNumber, selected, onClick }: {
 }
 
 /* ─── Editor Canvas ────────────────────────────────────────────────────────── */
-function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotationsChange, selectedId, onSelect, scale, fmt }: {
+function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotationsChange, selectedId, onSelect, scale, fmt, onActivatePage }: {
   arrayBuffer: ArrayBuffer | null; pageNumber: number; tool: Tool;
   annotations: Annotation[]; onAnnotationsChange: (a: Annotation[]) => void;
   selectedId: string | null; onSelect: (id: string | null) => void;
   scale: number;
   fmt: { fontSize: number; color: string; bold: boolean; italic: boolean; underline: boolean };
+  onActivatePage?: (page: number) => void;
 }) {
   const pdfCvs  = useRef<HTMLCanvasElement>(null);
   const drawCvs = useRef<HTMLCanvasElement>(null);
@@ -277,6 +278,7 @@ function EditorCanvas({ arrayBuffer, pageNumber, tool, annotations, onAnnotation
   };
 
   const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (typeof onActivatePage === "function") onActivatePage(pageNumber);
     if (textEdit) { commitText(); return; }
     const { cx, cy, dx, dy } = mouse(e);
     const c = drawCvs.current!;
@@ -471,6 +473,8 @@ export default function EditPage() {
   const [saveOk, setSaveOk]           = useState(false);
   const [zoomIdx, setZoomIdx]         = useState(2);
   const scale = ZOOM_STEPS[zoomIdx];
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const renderScale = isMobileViewport ? scale * 0.72 : scale;
   const [fmt, setFmt] = useState({ fontSize: 14, color: "#000000", bold: false, italic: false, underline: false });
 
   // ── Undo / Redo history ───────────────────────────────────────────────────
@@ -530,6 +534,13 @@ export default function EditPage() {
   }, []);
 
   // Keyboard shortcuts
+  useEffect(() => {
+    const syncViewport = () => setIsMobileViewport(window.innerWidth < 1024);
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -683,7 +694,7 @@ export default function EditPage() {
         <Header activePath="/edit" />
 
         {/* ── Toolbar ── */}
-        <div className="bg-white border-b border-[var(--border)] px-4 py-2 flex items-center gap-1 flex-wrap sticky top-[60px] z-40 shadow-sm">
+          <div className="bg-white border-b border-[var(--border)] px-3 sm:px-4 py-2 flex items-center gap-1 flex-wrap sticky top-[60px] z-40 shadow-sm">
           {/* Tools */}
           <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 mr-1">
             {TOOLS_CFG.map(t => (
@@ -769,7 +780,7 @@ export default function EditPage() {
           </div>
 
           {/* Page nav */}
-          <div className="flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
+          <div className="hidden lg:flex items-center gap-0.5 bg-[var(--bg)] rounded-xl p-1 ml-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
               className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-muted)] hover:bg-white disabled:opacity-40 transition-colors">
               <ChevronLeft className="w-4 h-4" />
@@ -798,15 +809,49 @@ export default function EditPage() {
             ))}
           </div>
 
-          {/* Canvas */}
-          <div className="flex-1 overflow-auto p-3 sm:p-6 lg:p-8 flex justify-center items-start"
+          {/* Mobile / tablet scroll stack */}
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 lg:hidden"
+            style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
+            <div className="max-w-full space-y-4">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                <section
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`rounded-2xl border transition-all ${
+                    page === n ? "border-brand-300 shadow-[0_12px_28px_-18px_rgba(230,72,9,.4)]" : "border-[var(--border)]"
+                  } bg-white/50 backdrop-blur-sm p-2 sm:p-3`}
+                >
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <span className="text-xs font-semibold text-[var(--text-muted)]">Halaman {n}</span>
+                    {page === n && (
+                      <span className="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">
+                        Aktif
+                      </span>
+                    )}
+                  </div>
+                  <div className="overflow-x-auto">
+                    <div className="mx-auto w-max max-w-full shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
+                      <EditorCanvas arrayBuffer={fileAB} pageNumber={n} tool={tool}
+                        annotations={annotations}
+                        onAnnotationsChange={(next) => pushHistory(annotations, next)}
+                        selectedId={selectedId} onSelect={setSelectedId}
+                        scale={renderScale} fmt={fmt} onActivatePage={setPage} />
+                    </div>
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop canvas */}
+          <div className="hidden lg:flex flex-1 overflow-auto p-3 sm:p-6 lg:p-8 justify-center items-start"
             style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
             <div className="shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
               <EditorCanvas arrayBuffer={fileAB} pageNumber={page} tool={tool}
                 annotations={annotations}
                 onAnnotationsChange={(next) => pushHistory(annotations, next)}
                 selectedId={selectedId} onSelect={setSelectedId}
-                scale={scale} fmt={fmt} />
+                scale={renderScale} fmt={fmt} onActivatePage={setPage} />
             </div>
           </div>
 
