@@ -8,7 +8,7 @@ const connection = new Redis({
   maxRetriesPerRequest: null,
 });
 
-export const pdfQueue = new Queue("pdf", { connection });
+export const pdfQueue = new Queue("pdf", { connection: connection as any });
 
 export const pdfWorker = new Worker(
   "pdf",
@@ -26,5 +26,5 @@ export const pdfWorker = new Worker(
         throw new Error("Unknown job type");
     }
   },
-  { connection }
+  { connection: connection as any }
 );

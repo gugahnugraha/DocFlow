@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       }
       
       const pdfBytes = await mergedPdf.save();
-      return new NextResponse(Buffer.from(pdfBytes), {
+      return new NextResponse(new Uint8Array(pdfBytes), {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": 'attachment; filename="split.pdf"',
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       }
       
       const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
-      return new NextResponse(zipBuffer, {
+      return new NextResponse(new Uint8Array(zipBuffer), {
         headers: {
           "Content-Type": "application/zip",
           "Content-Disposition": 'attachment; filename="split.zip"',

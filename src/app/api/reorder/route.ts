@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     copiedPages.forEach((page) => newDoc.addPage(page));
 
     const pdfBytes = await newDoc.save();
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="reordered.pdf"',

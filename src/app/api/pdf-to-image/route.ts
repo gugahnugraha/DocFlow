@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       const obj = zip.files[`page_${pg}.${ext}`];
       if (obj) {
         const buf = await obj.async("nodebuffer");
-        return new NextResponse(buf as any, {
+        return new NextResponse(new Uint8Array(buf), {
           headers: {
             "Content-Type": format === "png" ? "image/png" : "image/jpeg",
             "Content-Disposition": `attachment; filename="page_${pg}.${ext}"`,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     }
 
     const zipBuf = await zip.generateAsync({ type: "nodebuffer" });
-    return new NextResponse(zipBuf as any, {
+    return new NextResponse(new Uint8Array(zipBuf), {
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": 'attachment; filename="pdf_images.zip"',

@@ -621,8 +621,8 @@ export default function EditPage() {
             pg.drawRectangle({ x: ann.x, y: ph - ann.y - ann.height, width: ann.width, height: ann.height, borderColor: rgb(c.r, c.g, c.b), borderWidth: 2 });
           } else if (ann.type === "circle" && ann.width && ann.height) {
             const cx = ann.x + ann.width / 2, cy = ph - ann.y - ann.height / 2;
-            if (ann.fill) pg.drawEllipse({ x: cx, y: cy, xSemiAxis: ann.width/2, ySemiAxis: ann.height/2, color: rgb(c.r, c.g, c.b), opacity: 0.3 });
-            pg.drawEllipse({ x: cx, y: cy, xSemiAxis: ann.width/2, ySemiAxis: ann.height/2, borderColor: rgb(c.r, c.g, c.b), borderWidth: 2 });
+            if (ann.fill) pg.drawEllipse({ x: cx, y: cy, xScale: ann.width/2, yScale: ann.height/2, color: rgb(c.r, c.g, c.b), opacity: 0.3 });
+            pg.drawEllipse({ x: cx, y: cy, xScale: ann.width/2, yScale: ann.height/2, borderColor: rgb(c.r, c.g, c.b), borderWidth: 2 });
           } else if (ann.type === "line" && ann.points) {
             pg.drawLine({ start: { x: ann.points[0].x, y: ph - ann.points[0].y }, end: { x: ann.points[1].x, y: ph - ann.points[1].y }, color: rgb(c.r, c.g, c.b), thickness: 2.5 });
           }
@@ -630,7 +630,7 @@ export default function EditPage() {
       }
 
       const bytes = await doc.save();
-      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const url = URL.createObjectURL(new Blob([bytes as any], { type: "application/pdf" }));
       const a = document.createElement("a"); a.href = url; a.download = "edited.pdf"; a.click();
       URL.revokeObjectURL(url);
       setSaveOk(true); setTimeout(() => setSaveOk(false), 3000);

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const mergedPdf = await mergePDFs(buffers);
 
-    return new NextResponse(mergedPdf, {
+    return new NextResponse(new Uint8Array(mergedPdf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="merged.pdf"',

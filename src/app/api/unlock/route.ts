@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Save without any encryption — effectively removes password protection
     const pdfBytes = await pdfDoc.save();
 
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="unlocked.pdf"',

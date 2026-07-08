@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       useObjectStreams: true 
     });
 
-    return new NextResponse(Buffer.from(compressedPdfBytes), {
+    return new NextResponse(new Uint8Array(compressedPdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="compressed.pdf"',

@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       ownerPassword: ownerPassword || userPassword + "_owner",
     });
 
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="protected.pdf"',
