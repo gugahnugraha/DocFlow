@@ -270,18 +270,18 @@ export default function Header({ activePath }: { activePath?: string }) {
           ) : (
             // User is not logged in
             <>
-              <button
-                onClick={() => signIn()}
+              <Link
+                href="/login"
                 className="hidden md:block btn-ghost btn-sm rounded-xl text-sm font-semibold px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-all duration-200"
               >
                 {t.header.login}
-              </button>
-              <button
-                onClick={() => signIn()}
+              </Link>
+              <Link
+                href="/signup"
                 className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
               >
                 {t.header.signup}
-              </button>
+              </Link>
             </>
           )}
 
@@ -359,18 +359,20 @@ export default function Header({ activePath }: { activePath?: string }) {
                   </button>
                 ) : (
                   <>
-                    <button
-                      onClick={() => signIn()}
-                      className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)]"
+                    <Link
+                      href="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)] text-center"
                     >
                       {t.header.login}
-                    </button>
-                    <button
-                      onClick={() => signIn()}
-                      className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold"
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setMenuOpen(false)}
+                      className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold text-center"
                     >
                       {t.header.signup}
-                    </button>
+                    </Link>
                   </>
                 )}
               </div>
