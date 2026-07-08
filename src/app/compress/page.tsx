@@ -44,7 +44,7 @@ export default function CompressPage() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ background: "var(--bg)" }}>
         <Header activePath="/compress" />
-        <main className="flex min-h-[calc(100vh-60px)]">
+        <main className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)]">
           {!file ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="w-full max-w-lg">
@@ -73,7 +73,7 @@ export default function CompressPage() {
             </div>
           ) : (
             <>
-              <div className="flex-1 p-8 flex items-center justify-center">
+              <div className="flex-1 p-4 sm:p-8 flex items-center justify-center">
                 <div className="card overflow-hidden max-w-[220px] w-full">
                   <PdfPreview file={file} pageNumber={1} />
                   <div className="p-3 border-t border-[var(--border)]">

@@ -789,17 +789,17 @@ export default function EditPage() {
         </div>
 
         {/* ── Body ── */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
 
           {/* Thumbnails */}
-          <div className="w-[136px] flex-shrink-0 bg-white border-r border-[var(--border)] overflow-y-auto p-2 space-y-2">
+          <div className="hidden lg:block w-[136px] flex-shrink-0 bg-white border-r border-[var(--border)] overflow-y-auto p-2 space-y-2">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
               <PageThumb key={n} arrayBuffer={fileAB} pageNumber={n} selected={page === n} onClick={() => setPage(n)} />
             ))}
           </div>
 
           {/* Canvas */}
-          <div className="flex-1 overflow-auto p-8 flex justify-center items-start"
+          <div className="flex-1 overflow-auto p-3 sm:p-6 lg:p-8 flex justify-center items-start"
             style={{ background: "repeating-linear-gradient(45deg,#ede9e4 0,#ede9e4 2px,var(--bg) 2px,var(--bg) 20px)" }}>
             <div className="shadow-[0_8px_40px_-8px_rgba(0,0,0,.18)] rounded-lg overflow-hidden">
               <EditorCanvas arrayBuffer={fileAB} pageNumber={page} tool={tool}
@@ -811,7 +811,7 @@ export default function EditPage() {
           </div>
 
           {/* Properties */}
-          <div className="w-60 flex-shrink-0 bg-white border-l border-[var(--border)] flex flex-col overflow-y-auto">
+          <div className="hidden xl:flex w-60 flex-shrink-0 bg-white border-l border-[var(--border)] flex-col overflow-y-auto">
             <div className="px-4 pt-4 pb-3 border-b border-[var(--border)]">
               <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Properties</p>
             </div>

@@ -122,7 +122,7 @@ export default function PageNumbersPage() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ background: "var(--bg)" }}>
         <Header activePath="/page-numbers" />
-        <main className="flex min-h-[calc(100vh-60px)]">
+        <main className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)]">
           {!file ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="w-full max-w-lg">

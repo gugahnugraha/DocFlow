@@ -255,7 +255,7 @@ export default function SplitPage() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ background: "var(--bg)" }}>
         <Header activePath="/split" />
-        <main className="flex min-h-[calc(100vh-60px)]">
+        <main className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)]">
 
           {/* ── Upload state ── */}
           {!file ? (

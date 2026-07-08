@@ -94,7 +94,7 @@ export default {
       pdfToImage: { label: "PDF ke Gambar", desc: "Ekspor halaman sebagai JPG/PNG" },
       imageToPdf: { label: "Gambar ke PDF", desc: "Konversi JPG/PNG ke PDF" },
       protect: { label: "Lindungi PDF", desc: "Tambah password ke PDF" },
-      unlock: { label: "Unlock PDF", desc: "Hapus password dari PDF" },
+      unlock: { label: "Buka PDF", desc: "Hapus password dari PDF" },
     },
     login: "Masuk",
     signup: "Daftar Gratis",

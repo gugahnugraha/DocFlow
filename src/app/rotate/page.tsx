@@ -128,7 +128,7 @@ export default function RotatePage() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ background: "var(--bg)" }}>
         <Header activePath="/rotate" />
-        <main className="flex min-h-[calc(100vh-60px)]">
+        <main className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)]">
           {!file ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="w-full max-w-lg">
@@ -158,7 +158,7 @@ export default function RotatePage() {
           ) : (
             <>
               <div className="flex-1 overflow-y-auto p-5">
-                <div className="flex items-center gap-2 mb-5 bg-white rounded-xl p-2.5 border border-[var(--border)]">
+                <div className="flex flex-wrap items-center gap-2 mb-5 bg-white rounded-xl p-2.5 border border-[var(--border)]">
                   <Button onClick={() => setPages(p => p.map(pg => ({ ...pg, selected: !allSelected })))}
                     variant="outline" size="sm">
                     {allSelected ? t.common.actions.clearSelection : t.common.actions.selectAll}

@@ -56,7 +56,7 @@ export default function ImageToPdfPage() {
     <ProtectedRoute>
       <div className="min-h-screen" style={{ background: "var(--bg)" }}>
         <Header activePath="/image-to-pdf" />
-        <main className="flex min-h-[calc(100vh-60px)]">
+        <main className="flex flex-col lg:flex-row min-h-[calc(100vh-60px)]">
           {images.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-6">
               <div className="w-full max-w-lg">

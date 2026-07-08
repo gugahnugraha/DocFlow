@@ -136,7 +136,7 @@ export default function Header({ activePath }: { activePath?: string }) {
             {/* Mega dropdown */}
             {dropdownOpen && (
               <div
-                className="absolute top-full left-0 pt-2 z-50 w-[660px] animate-slide-up"
+                className="absolute top-full left-0 pt-2 z-50 w-[min(660px,calc(100vw-2.5rem))] animate-slide-up"
                 onMouseEnter={openDropdown}
                 onMouseLeave={closeDropdown}
               >

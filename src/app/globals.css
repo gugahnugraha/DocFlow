@@ -190,17 +190,18 @@ body {
 
   /* ─ Sidebar panel ─────────────────── */
   .sidebar {
-    @apply w-80 bg-white/55 backdrop-blur-xl border-l border-white/35
-           flex flex-col overflow-y-auto;
+    @apply w-full lg:w-80 bg-white/55 backdrop-blur-xl
+           border-t border-white/30 lg:border-t-0 lg:border-l lg:border-white/35
+           flex flex-col overflow-y-auto lg:sticky lg:top-[60px] lg:max-h-[calc(100vh-60px)];
   }
   .sidebar-header {
-    @apply px-6 pt-6 pb-4 border-b border-white/30;
+    @apply px-4 sm:px-6 pt-6 pb-4 border-b border-white/30;
   }
   .sidebar-body {
-    @apply flex-1 overflow-y-auto px-6 py-5 space-y-5;
+    @apply flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5;
   }
   .sidebar-footer {
-    @apply px-6 py-5 border-t border-white/30;
+    @apply px-4 sm:px-6 py-5 border-t border-white/30;
   }
 
   /* ─ Section label ─────────────────── */
