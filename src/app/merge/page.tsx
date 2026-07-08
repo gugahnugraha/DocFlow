@@ -36,13 +36,13 @@ function FileThumb({ item, onRemove }: { item: FileItem; onRemove: () => void })
   }, [item]);
 
   return (
-    <div className="card group relative flex flex-col overflow-hidden">
+    <div className="card group relative flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
       <button onClick={onRemove}
-        className="absolute top-2 right-2 z-10 w-6 h-6 bg-white border border-[var(--border)] rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 transition-colors shadow-sm">
+        className="absolute top-2 right-2 z-10 w-6 h-6 bg-white border border-[var(--border)] rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:border-red-300 transition-all duration-200 shadow-sm hover:shadow-md">
         <X className="w-3 h-3" />
       </button>
-      <div className="bg-slate-50 flex items-center justify-center min-h-[120px] p-2">
-        {loading && <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-500 rounded-full animate-spin" />}
+      <div className="bg-gradient-to-br from-slate-50 to-orange-50 flex items-center justify-center min-h-[120px] p-2">
+        {loading && <div className="w-5 h-5 border-2 border-slate-200 border-t-orange-500 rounded-full animate-spin" />}
         <canvas ref={cvs} className="w-full h-auto" style={{ display: loading ? "none" : "block" }} />
       </div>
       <div className="p-2 border-t border-[var(--border)]">
@@ -87,8 +87,8 @@ export default function MergePage() {
           <div className="flex-1 flex items-center justify-center p-6">
             <div className="w-full max-w-lg">
               <div className="text-center mb-6">
-                <div className="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <FileType className="w-7 h-7 text-brand-500" />
+                <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-orange-500/20">
+                  <FileType className="w-7 h-7 text-orange-600" />
                 </div>
                 <h1 className="text-2xl font-bold text-[var(--text)] mb-1">Merge PDF</h1>
                 <p className="text-sm text-[var(--text-muted)]">Gabungkan beberapa file PDF menjadi satu dokumen</p>
@@ -105,8 +105,8 @@ export default function MergePage() {
                 ))}
                 <label className="cursor-pointer">
                   <input type="file" accept="application/pdf" multiple onChange={e => e.target.files && addFiles(Array.from(e.target.files))} className="hidden" />
-                  <div className="flex flex-col items-center justify-center min-h-[140px] rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-brand-300 hover:bg-brand-50/30 transition-colors text-[var(--text-subtle)] gap-2">
-                    <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center">
+                  <div className="flex flex-col items-center justify-center min-h-[140px] rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-orange-300 hover:bg-gradient-to-br hover:from-orange-50 hover:to-red-50 transition-all duration-300 text-[var(--text-subtle)] gap-2 hover:-translate-y-0.5">
+                    <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
                       <Plus className="w-5 h-5 text-white" />
                     </div>
                     <span className="text-xs font-semibold">Tambah</span>
@@ -121,15 +121,15 @@ export default function MergePage() {
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">{files.length} file dipilih</p>
               </div>
               <div className="sidebar-body">
-                <div className="card p-3 bg-blue-50 border-blue-100">
-                  <p className="text-xs text-blue-700 leading-relaxed">
+                <div className="card p-3 bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+                  <p className="text-xs text-orange-700 leading-relaxed">
                     Seret untuk mengubah urutan file, atau klik <strong>Tambah</strong> untuk menambah lebih banyak file PDF.
                   </p>
                 </div>
                 <div className="space-y-1.5">
                   {files.map((f, i) => (
-                    <div key={f.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[var(--bg)] transition-colors">
-                      <span className="text-xs font-bold text-brand-500 w-5">{i + 1}</span>
+                    <div key={f.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 transition-all duration-200">
+                      <span className="text-xs font-bold text-orange-500 w-5">{i + 1}</span>
                       <p className="text-xs text-[var(--text)] truncate flex-1">{f.file.name}</p>
                       <button onClick={() => remove(f.id)} className="text-[var(--text-subtle)] hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
                     </div>

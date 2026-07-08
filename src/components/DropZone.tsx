@@ -34,9 +34,9 @@ function formatBytes(bytes: number): string {
 
 function FileChip({ file, onRemove }: { file: File; onRemove?: () => void }) {
   return (
-    <div className="flex items-center gap-2.5 bg-brand-50 border border-brand-100 rounded-xl px-3 py-2 text-sm animate-fade-in">
-      <div className="w-7 h-7 bg-brand-100 rounded-lg flex items-center justify-center flex-shrink-0">
-        <FileText className="w-3.5 h-3.5 text-brand-600" />
+    <div className="flex items-center gap-2.5 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl px-3 py-2 text-sm animate-fade-in">
+      <div className="w-7 h-7 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <FileText className="w-3.5 h-3.5 text-orange-600" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-[var(--text)] truncate text-xs">{file.name}</p>
@@ -45,7 +45,7 @@ function FileChip({ file, onRemove }: { file: File; onRemove?: () => void }) {
       {onRemove && (
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className="w-5 h-5 rounded-full bg-brand-200/60 hover:bg-brand-300 text-brand-700 flex items-center justify-center transition-colors flex-shrink-0"
+          className="w-5 h-5 rounded-full bg-orange-200/60 hover:bg-orange-300 text-orange-700 flex items-center justify-center transition-colors flex-shrink-0"
           aria-label="Hapus file"
         >
           <X className="w-3 h-3" />

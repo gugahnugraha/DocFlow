@@ -7,21 +7,32 @@
 
 /* ── CSS custom properties ────────────────────────────────────────────────── */
 :root {
-  --brand:        #e64809;
-  --brand-light:  #fff2ee;
-  --brand-dark:   #a83306;
-  --bg:           #f8f7f6;
+  --brand:        #f97316;
+  --brand-light:  #fff7ed;
+  --brand-dark:   #c2410c;
+  --brand-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #dc2626 100%);
+  --bg:           #fafafa;
   --surface:      #ffffff;
-  --border:       #e8e4e0;
-  --text:         #1a1714;
-  --text-muted:   #6b6560;
-  --text-subtle:  #9e9791;
-  --radius:       0.875rem;
+  --border:       #e5e7eb;
+  --text:         #111827;
+  --text-muted:   #6b7280;
+  --text-subtle:  #9ca3af;
+  --radius:       1rem;
   --radius-sm:    0.5rem;
-  --radius-lg:    1.25rem;
-  --shadow-sm:    0 1px 3px 0 rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.04);
-  --shadow:       0 4px 12px -2px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.04);
-  --shadow-lg:    0 12px 32px -4px rgba(0,0,0,.10), 0 4px 8px -2px rgba(0,0,0,.05);
+  --radius-lg:    1.5rem;
+  --shadow-sm:    0 1px 2px 0 rgba(0,0,0,.05), 0 1px 3px -1px rgba(0,0,0,.05);
+  --shadow:       0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+  --shadow-lg:    0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -4px rgba(0,0,0,.05);
+  --shadow-xl:    0 20px 25px -5px rgba(0,0,0,.10), 0 8px 10px -6px rgba(0,0,0,.05);
+  
+  /* Color palette */
+  --color-violet:  #8b5cf6;
+  --color-blue:    #3b82f6;
+  --color-cyan:    #06b6d4;
+  --color-emerald: #10b981;
+  --color-pink:    #ec4899;
+  --color-amber:   #f59e0b;
+  --color-red:     #ef4444;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -63,7 +74,7 @@ body {
   /* ─ Buttons ───────────────────────── */
   .btn {
     @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl
-           transition-all duration-150 select-none cursor-pointer
+           transition-all duration-200 select-none cursor-pointer
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-sm  { @apply btn text-sm px-3 py-1.5; }
@@ -72,28 +83,50 @@ body {
   .btn-xl  { @apply btn text-lg px-8 py-4; }
 
   .btn-brand {
-    @apply bg-brand-500 text-white;
-    box-shadow: 0 2px 12px -2px rgba(230,72,9,.25);
+    background: var(--brand-gradient);
+    color: white;
+    box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.39);
   }
-  .btn-brand:hover:not(:disabled)  { @apply bg-brand-600; box-shadow: 0 4px 24px -4px rgba(230,72,9,.35); }
-  .btn-brand:active:not(:disabled) { @apply bg-brand-700; }
-  .btn-brand:focus-visible { outline: 2px solid #e64809; outline-offset: 2px; }
+  .btn-brand:hover:not(:disabled)  { 
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px 0 rgba(249, 115, 22, 0.23), 0 0 0 3px rgba(249, 115, 22, 0.1);
+  }
+  .btn-brand:active:not(:disabled) { 
+    transform: translateY(0);
+    box-shadow: 0 2px 10px 0 rgba(249, 115, 22, 0.3);
+  }
+  .btn-brand:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }
 
   .btn-outline {
     @apply border border-[var(--border)] bg-white text-[var(--text-muted)];
   }
-  .btn-outline:hover:not(:disabled) { @apply border-brand-300 text-brand-600 bg-brand-50; }
-  .btn-outline:focus-visible { outline: 2px solid #e64809; outline-offset: 2px; }
+  .btn-outline:hover:not(:disabled) { 
+    @apply border-brand-300 text-brand-600 bg-brand-50;
+    transform: translateY(-1px);
+  }
+  .btn-outline:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }
   .btn-ghost {
     @apply text-[var(--text-muted)];
   }
-  .btn-ghost:hover:not(:disabled) { @apply text-[var(--text)]; background: rgba(0,0,0,.05); }
+  .btn-ghost:hover:not(:disabled) { 
+    @apply text-[var(--text)]; 
+    background: rgba(0,0,0,.05);
+    transform: translateY(-1px);
+  }
 
   .btn-danger {
     @apply bg-red-500 text-white;
+    box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
   }
-  .btn-danger:hover:not(:disabled)  { @apply bg-red-600; }
-  .btn-danger:active:not(:disabled) { @apply bg-red-700; }
+  .btn-danger:hover:not(:disabled)  { 
+    @apply bg-red-600;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.23);
+  }
+  .btn-danger:active:not(:disabled) { 
+    @apply bg-red-700;
+    transform: translateY(0);
+  }
 
   /* ─ Cards ─────────────────────────── */
   .card {
@@ -101,22 +134,23 @@ body {
            shadow-[var(--shadow-sm)];
   }
   .card-hover {
-    @apply card transition-all duration-200;
+    @apply card transition-all duration-300;
   }
   .card-hover:hover {
-    box-shadow: var(--shadow);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    border-color: rgba(249, 115, 22, 0.2);
   }
 
   /* ─ Input ─────────────────────────── */
   .input {
     @apply w-full px-3 py-2.5 rounded-xl border border-[var(--border)]
            bg-white text-[var(--text)] placeholder-[var(--text-subtle)]
-           text-sm transition-colors duration-150 outline-none;
+           text-sm transition-all duration-200 outline-none;
   }
   .input:focus {
-    border-color: #e64809;
-    box-shadow: 0 0 0 3px rgba(230, 72, 9, 0.12);
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
   }
 
   /* ─ Badge ─────────────────────────── */
@@ -136,17 +170,18 @@ body {
     @apply relative flex flex-col items-center justify-center gap-4
            rounded-2xl border-2 border-dashed border-[var(--border)]
            bg-white p-10 text-center cursor-pointer
-           transition-all duration-200;
+           transition-all duration-300;
   }
   .dropzone:hover {
-    border-color: #ffc2a8;
-    background-color: rgba(255,242,238,.3);
+    border-color: #f97316;
+    background: linear-gradient(135deg, rgba(255,247,237,0.5) 0%, rgba(255,247,237,0.8) 100%);
+    transform: scale(1.01);
   }
   .dropzone-active {
-    border-color: #e64809 !important;
-    background-color: rgba(255,242,238,.6) !important;
-    transform: scale(1.01);
-    box-shadow: 0 0 0 4px rgba(230,72,9,.12);
+    border-color: #f97316 !important;
+    background: linear-gradient(135deg, rgba(255,247,237,0.8) 0%, rgba(255,247,237,1) 100%) !important;
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15), 0 10px 40px -10px rgba(249, 115, 22, 0.2);
   }
 
   /* ─ Sidebar panel ─────────────────── */

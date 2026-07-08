@@ -17,8 +17,8 @@ const TOOL_GROUPS = [
   },
   {
     label: "Edit & Optimalkan",
-    color: "text-brand-600",
-    bg: "bg-brand-50",
+    color: "text-orange-600",
+    bg: "bg-orange-50",
     tools: [
       { href: "/edit",         label: "Edit PDF",          desc: "Teks, highlight, anotasi" },
       { href: "/compress",     label: "Compress PDF",      desc: "Perkecil ukuran file" },
@@ -86,12 +86,12 @@ export default function Header({ activePath }: { activePath?: string }) {
 
         {/* ── Logo ── */}
         <a href="/" className="flex items-center gap-2 flex-shrink-0 group">
-          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center shadow-brand-sm group-hover:shadow-brand transition-shadow">
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:shadow-xl group-hover:shadow-orange-500/40 transition-all duration-300">
             <FileType className="w-4 h-4 text-white" />
           </div>
           <span className="text-[17px] font-bold tracking-tight">
             <span className="text-[var(--text)]">Doc</span>
-            <span className="text-brand-500">Flow</span>
+            <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">Flow</span>
           </span>
         </a>
 
@@ -107,9 +107,9 @@ export default function Header({ activePath }: { activePath?: string }) {
           >
             <button
               onClick={() => setDropdownOpen(v => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 dropdownOpen
-                  ? "bg-brand-50 text-brand-600"
+                  ? "bg-orange-50 text-orange-600"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)]"
               }`}
             >
@@ -136,18 +136,18 @@ export default function Header({ activePath }: { activePath?: string }) {
                           <a
                             key={tool.href}
                             href={tool.href}
-                            className={`flex items-start gap-2.5 px-2.5 py-2 rounded-xl transition-colors group ${
+                            className={`flex items-start gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 group ${
                               activePath === tool.href
-                                ? "bg-brand-50"
+                                ? "bg-orange-50"
                                 : "hover:bg-[var(--bg)]"
                             }`}
                           >
                             <div className={`w-1.5 h-1.5 rounded-full mt-[7px] flex-shrink-0 ${
-                              activePath === tool.href ? "bg-brand-500" : "bg-[var(--border)] group-hover:bg-brand-300"
+                              activePath === tool.href ? "bg-orange-500" : "bg-[var(--border)] group-hover:bg-orange-300"
                             } transition-colors`} />
                             <div>
                               <p className={`text-[13px] font-semibold leading-tight ${
-                                activePath === tool.href ? "text-brand-600" : "text-[var(--text)] group-hover:text-brand-600"
+                                activePath === tool.href ? "text-orange-600" : "text-[var(--text)] group-hover:text-orange-600"
                               } transition-colors`}>
                                 {tool.label}
                               </p>
@@ -171,9 +171,9 @@ export default function Header({ activePath }: { activePath?: string }) {
             <a
               key={link.href}
               href={link.href}
-              className={`px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 activePath === link.href
-                  ? "text-brand-600 bg-brand-50"
+                  ? "text-orange-600 bg-orange-50"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)]"
               }`}
             >
@@ -184,10 +184,10 @@ export default function Header({ activePath }: { activePath?: string }) {
 
         {/* ── Right side ── */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button className="hidden md:block btn-ghost btn-sm rounded-xl text-sm font-semibold px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors">
+          <button className="hidden md:block btn-ghost btn-sm rounded-xl text-sm font-semibold px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-all duration-200">
             Masuk
           </button>
-          <button className="hidden md:flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-brand-sm hover:shadow-brand">
+          <button className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5">
             Daftar Gratis
           </button>
 
@@ -217,9 +217,9 @@ export default function Header({ activePath }: { activePath?: string }) {
                       key={tool.href}
                       href={tool.href}
                       onClick={() => setMenuOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         activePath === tool.href
-                          ? "bg-brand-50 text-brand-600"
+                          ? "bg-orange-50 text-orange-600"
                           : "text-[var(--text)] hover:bg-[var(--bg)]"
                       }`}
                     >
@@ -233,7 +233,7 @@ export default function Header({ activePath }: { activePath?: string }) {
               <button className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)]">
                 Masuk
               </button>
-              <button className="py-2.5 bg-brand-500 text-white rounded-xl text-sm font-semibold">
+              <button className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold">
                 Daftar Gratis
               </button>
             </div>

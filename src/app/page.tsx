@@ -9,21 +9,21 @@ import Header from "@/components/Header";
 /* ─── Tool definitions ─────────────────────────────────────────────────────── */
 const TOOLS = [
   // Organisir
-  { id: "merge",        title: "Merge PDF",            desc: "Gabungkan beberapa PDF menjadi satu",       icon: FileType,    accent: "#7c3aed", lightBg: "#f5f3ff", category: "Organisir" },
-  { id: "split",        title: "Split PDF",            desc: "Pisahkan PDF menjadi beberapa file",         icon: Scissors,    accent: "#059669", lightBg: "#ecfdf5", category: "Organisir" },
-  { id: "reorder",      title: "Susun Ulang Halaman",  desc: "Atur urutan halaman dengan drag & drop",     icon: ArrowDownUp, accent: "#0284c7", lightBg: "#e0f2fe", category: "Organisir" },
-  { id: "rotate",       title: "Rotate PDF",           desc: "Putar halaman PDF sesuka kamu",              icon: RotateCw,    accent: "#0891b2", lightBg: "#ecfeff", category: "Organisir" },
+  { id: "merge",        title: "Merge PDF",            desc: "Gabungkan beberapa PDF menjadi satu",       icon: FileType,    accent: "#8b5cf6", lightBg: "#f5f3ff", category: "Organisir" },
+  { id: "split",        title: "Split PDF",            desc: "Pisahkan PDF menjadi beberapa file",         icon: Scissors,    accent: "#10b981", lightBg: "#ecfdf5", category: "Organisir" },
+  { id: "reorder",      title: "Susun Ulang Halaman",  desc: "Atur urutan halaman dengan drag & drop",     icon: ArrowDownUp, accent: "#3b82f6", lightBg: "#dbeafe", category: "Organisir" },
+  { id: "rotate",       title: "Rotate PDF",           desc: "Putar halaman PDF sesuka kamu",              icon: RotateCw,    accent: "#06b6d4", lightBg: "#cffafe", category: "Organisir" },
   // Edit
-  { id: "edit",         title: "Edit PDF",             desc: "Tambahkan teks, highlight, dan anotasi",    icon: Pencil,      accent: "#e64809", lightBg: "#fff2ee", category: "Edit" },
-  { id: "watermark",    title: "Watermark PDF",        desc: "Tambahkan teks watermark ke setiap halaman", icon: Stamp,       accent: "#7c3aed", lightBg: "#f5f3ff", category: "Edit" },
-  { id: "page-numbers", title: "Nomor Halaman",        desc: "Tambahkan nomor halaman dengan format kustom", icon: Hash,     accent: "#0d9488", lightBg: "#f0fdfa", category: "Edit" },
-  { id: "compress",     title: "Compress PDF",         desc: "Perkecil ukuran file tanpa kehilangan kualitas", icon: FileText, accent: "#d97706", lightBg: "#fffbeb", category: "Edit" },
+  { id: "edit",         title: "Edit PDF",             desc: "Tambahkan teks, highlight, dan anotasi",    icon: Pencil,      accent: "#f97316", lightBg: "#ffedd5", category: "Edit" },
+  { id: "watermark",    title: "Watermark PDF",        desc: "Tambahkan teks watermark ke setiap halaman", icon: Stamp,       accent: "#8b5cf6", lightBg: "#f5f3ff", category: "Edit" },
+  { id: "page-numbers", title: "Nomor Halaman",        desc: "Tambahkan nomor halaman dengan format kustom", icon: Hash,     accent: "#14b8a6", lightBg: "#ccfbf1", category: "Edit" },
+  { id: "compress",     title: "Compress PDF",         desc: "Perkecil ukuran file tanpa kehilangan kualitas", icon: FileText, accent: "#f59e0b", lightBg: "#fef3c7", category: "Edit" },
   // Konversi
-  { id: "pdf-to-image", title: "PDF ke Gambar",        desc: "Ekspor halaman PDF sebagai JPG atau PNG",   icon: ImageIcon,   accent: "#db2777", lightBg: "#fdf2f8", category: "Konversi" },
-  { id: "image-to-pdf", title: "Gambar ke PDF",        desc: "Konversi JPG, PNG menjadi dokumen PDF",     icon: Upload,      accent: "#e64809", lightBg: "#fff2ee", category: "Konversi" },
+  { id: "pdf-to-image", title: "PDF ke Gambar",        desc: "Ekspor halaman PDF sebagai JPG atau PNG",   icon: ImageIcon,   accent: "#ec4899", lightBg: "#fce7f3", category: "Konversi" },
+  { id: "image-to-pdf", title: "Gambar ke PDF",        desc: "Konversi JPG, PNG menjadi dokumen PDF",     icon: Upload,      accent: "#f97316", lightBg: "#ffedd5", category: "Konversi" },
   // Keamanan
-  { id: "protect",      title: "Protect PDF",          desc: "Lindungi PDF dengan kata sandi",             icon: Lock,        accent: "#dc2626", lightBg: "#fff1f2", category: "Keamanan" },
-  { id: "unlock",       title: "Unlock PDF",           desc: "Hapus proteksi password dari PDF",           icon: LockOpen,    accent: "#16a34a", lightBg: "#f0fdf4", category: "Keamanan" },
+  { id: "protect",      title: "Protect PDF",          desc: "Lindungi PDF dengan kata sandi",             icon: Lock,        accent: "#ef4444", lightBg: "#fee2e2", category: "Keamanan" },
+  { id: "unlock",       title: "Unlock PDF",           desc: "Hapus proteksi password dari PDF",           icon: LockOpen,    accent: "#22c55e", lightBg: "#dcfce7", category: "Keamanan" },
 ];
 
 const CATEGORIES = ["Organisir", "Edit", "Konversi", "Keamanan"] as const;
@@ -39,22 +39,22 @@ const FEATURES = [
     icon: Zap,
     title: "Cepat & Ringan",
     desc: "Proses PDF langsung di browser dalam hitungan detik — tidak perlu menunggu upload ke server.",
-    accent: "#d97706",
-    bg: "#fffbeb",
+    accent: "#f59e0b",
+    bg: "#fef3c7",
   },
   {
     icon: Shield,
     title: "Privasi Terjaga",
     desc: "File kamu diproses dengan aman. Tidak ada yang disimpan di server kami setelah proses selesai.",
-    accent: "#059669",
+    accent: "#10b981",
     bg: "#ecfdf5",
   },
   {
     icon: Globe,
     title: "Akses di Mana Saja",
     desc: "Buka dari browser apa pun — laptop, tablet, atau ponsel. Tidak perlu akun atau aplikasi tambahan.",
-    accent: "#0284c7",
-    bg: "#e0f2fe",
+    accent: "#3b82f6",
+    bg: "#dbeafe",
   },
 ];
 
@@ -71,24 +71,28 @@ export default function Home() {
       <Header activePath="/" />
 
       {/* ══════════════════════════════════════════════════════ HERO */}
-      <section className="relative overflow-hidden bg-white border-b border-[var(--border)]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-white via-orange-50/30 to-white border-b border-[var(--border)]">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-400/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute top-20 right-1/4 w-80 h-80 bg-pink-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-violet-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "2s" }} />
+        </div>
+        
         {/* Subtle grid background */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage: "linear-gradient(var(--text) 1px, transparent 1px), linear-gradient(90deg, var(--text) 1px, transparent 1px)",
             backgroundSize: "40px 40px",
           }}
         />
-        {/* Warm glow */}
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-20 blur-3xl"
-          style={{ background: "radial-gradient(circle, #e64809 0%, transparent 70%)" }} />
 
         <div className="relative max-w-screen-xl mx-auto px-5 pt-20 pb-24">
           {/* Badge */}
           <div className="flex justify-center mb-6">
-            <span className="badge-brand py-1.5 px-4 text-sm">
-              <Star className="w-3.5 h-3.5" />
+            <span className="inline-flex items-center gap-2 py-2 px-4 text-sm font-semibold bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full shadow-lg shadow-orange-500/25">
+              <Star className="w-3.5 h-3.5 fill-white" />
               12 alat PDF gratis — tanpa daftar
             </span>
           </div>
@@ -97,13 +101,11 @@ export default function Home() {
           <h1 className="text-center text-[clamp(2.2rem,5vw,3.75rem)] font-extrabold leading-[1.1] tracking-tight text-[var(--text)] max-w-3xl mx-auto text-balance mb-5">
             Semua yang kamu butuhkan untuk{" "}
             <span
-              className="relative inline-block"
-              style={{ color: "var(--brand)" }}
+              className="relative inline-block bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 bg-clip-text text-transparent"
             >
               dokumen PDF
               <span
-                className="absolute -bottom-1 left-0 right-0 h-[3px] rounded-full"
-                style={{ background: "var(--brand)", opacity: 0.3 }}
+                className="absolute -bottom-1 left-0 right-0 h-[3px] rounded-full bg-gradient-to-r from-orange-500 to-red-500 opacity-60"
               />
             </span>
           </h1>
@@ -117,7 +119,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
             <a
               href="/merge"
-              className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-bold text-base px-7 py-4 rounded-2xl shadow-brand hover:shadow-brand transition-all duration-150"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-base px-7 py-4 rounded-2xl shadow-xl shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 transition-all duration-300 hover:-translate-y-0.5"
             >
               <Upload className="w-5 h-5" />
               Mulai Sekarang — Gratis
@@ -125,7 +127,7 @@ export default function Home() {
             </a>
             <a
               href="#tools"
-              className="inline-flex items-center gap-2 bg-white hover:bg-[var(--bg)] text-[var(--text-muted)] hover:text-[var(--text)] font-semibold text-base px-6 py-4 rounded-2xl border border-[var(--border)] transition-colors"
+              className="inline-flex items-center gap-2 bg-white hover:bg-orange-50 text-[var(--text-muted)] hover:text-[var(--text)] font-semibold text-base px-6 py-4 rounded-2xl border border-[var(--border)] hover:border-orange-300 transition-all duration-300 hover:-translate-y-0.5"
             >
               <Layers className="w-4 h-4" />
               Lihat semua alat
@@ -136,7 +138,7 @@ export default function Home() {
           <div className="flex flex-wrap justify-center gap-8">
             {STATS.map((s) => (
               <div key={s.label} className="text-center">
-                <p className="text-2xl font-extrabold" style={{ color: "var(--brand)" }}>{s.value}</p>
+                <p className="text-2xl font-extrabold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">{s.value}</p>
                 <p className="text-sm text-[var(--text-subtle)] mt-0.5">{s.label}</p>
               </div>
             ))}
@@ -255,17 +257,20 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════ CTA BANNER */}
-      <section className="py-14 px-5 border-t border-[var(--border)]" style={{ background: "var(--brand)" }}>
-        <div className="max-w-2xl mx-auto text-center">
+      <section className="py-14 px-5 border-t border-[var(--border)] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-600 to-red-500" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBMMCAwTDQwIDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-30" />
+        
+        <div className="relative max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-extrabold text-white mb-3 tracking-tight">
             Siap mulai? Gratis selamanya.
           </h2>
-          <p className="text-white/80 mb-8">
+          <p className="text-white/90 mb-8">
             Tidak perlu kartu kredit. Tidak perlu daftar. Langsung pakai.
           </p>
           <a
             href="/merge"
-            className="inline-flex items-center gap-2 bg-white text-brand-600 hover:bg-brand-50 font-bold text-base px-8 py-4 rounded-2xl transition-colors shadow-lg"
+            className="inline-flex items-center gap-2 bg-white text-orange-600 hover:bg-orange-50 font-bold text-base px-8 py-4 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
           >
             <Upload className="w-5 h-5" />
             Coba Sekarang

@@ -21,10 +21,10 @@ const SIZE_CLASSES: Record<Size, string> = {
 };
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  brand:   "bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white shadow-brand-sm hover:shadow-brand focus-visible:ring-brand-400",
-  outline: "border border-[var(--border)] bg-white text-[var(--text-muted)] hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50 focus-visible:ring-brand-300",
+  brand:   "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 focus-visible:ring-orange-400",
+  outline: "border border-[var(--border)] bg-white text-[var(--text-muted)] hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 focus-visible:ring-orange-300",
   ghost:   "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-black/5 focus-visible:ring-slate-300",
-  danger:  "bg-red-500 hover:bg-red-600 active:bg-red-700 text-white focus-visible:ring-red-400",
+  danger:  "bg-red-500 hover:bg-red-600 active:bg-red-700 text-white shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 focus-visible:ring-red-400",
   white:   "bg-white hover:bg-slate-50 text-[var(--text)] border border-[var(--border)] shadow-sm focus-visible:ring-slate-300",
 };
 
