@@ -4,9 +4,11 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FileType, Eye, EyeOff } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function LoginPage() {
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState("");
@@ -36,7 +38,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Email atau password salah");
+        setError(t.loginSignup.errors.invalidCredentials);
       } else if (result?.url) {
         router.push(result.url);
       }
@@ -50,7 +52,7 @@ export default function LoginPage() {
 
         if (!res.ok) {
           const data = await res.json();
-          setError(data.message || "Terjadi kesalahan saat mendaftar");
+          setError(data.message || t.loginSignup.errors.signupError);
         } else {
           const result = await signIn("credentials", {
             email,
@@ -63,7 +65,7 @@ export default function LoginPage() {
           }
         }
       } catch (err) {
-        setError("Terjadi kesalahan saat mendaftar");
+        setError(t.loginSignup.errors.signupError);
       }
     }
 
@@ -78,12 +80,12 @@ export default function LoginPage() {
             <FileType className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-[var(--text)] mb-2">
-            {isLogin ? "Masuk ke DocFlow" : "Daftar ke DocFlow"}
+            {isLogin ? t.loginSignup.loginTitle : t.loginSignup.signupTitle}
           </h1>
           <p className="text-[var(--text-muted)]">
             {isLogin
-              ? "Masuk untuk mengakses semua fitur alat PDF kami"
-              : "Daftar gratis untuk mulai menggunakan alat PDF"}
+              ? t.loginSignup.loginSubtitle
+              : t.loginSignup.signupSubtitle}
           </p>
         </div>
 
@@ -97,7 +99,7 @@ export default function LoginPage() {
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-[var(--text)] mb-1">
-                Nama
+                {t.loginSignup.name}
               </label>
               <input
                 type="text"
@@ -111,7 +113,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-[var(--text)] mb-1">
-              Email
+              {t.loginSignup.email}
             </label>
             <input
               type="email"
@@ -124,7 +126,7 @@ export default function LoginPage() {
 
           <div className="relative">
             <label className="block text-sm font-medium text-[var(--text)] mb-1">
-              Password
+              {t.loginSignup.password}
             </label>
             <input
               type={showPassword ? "text" : "password"}
@@ -151,13 +153,13 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Memproses..." : isLogin ? "Masuk" : "Daftar"}
+            {loading ? t.loginSignup.processing : isLogin ? t.loginSignup.login : t.loginSignup.signup}
           </button>
         </form>
 
         <div className="flex items-center my-6">
           <div className="flex-1 border-t border-[var(--border)]" />
-          <span className="mx-4 text-sm text-[var(--text-muted)]">atau</span>
+          <span className="mx-4 text-sm text-[var(--text-muted)]">{t.loginSignup.or}</span>
           <div className="flex-1 border-t border-[var(--border)]" />
         </div>
 
@@ -183,12 +185,12 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Lanjutkan dengan Google
+          {t.loginSignup.continueWithGoogle}
         </button>
 
         <div className="text-center mt-6">
           <p className="text-sm text-[var(--text-muted)]">
-            {isLogin ? "Belum punya akun?" : "Sudah punya akun?"}{" "}
+            {isLogin ? t.loginSignup.noAccount : t.loginSignup.haveAccount}{" "}
             <button
               onClick={() => {
                 setIsLogin(!isLogin);
@@ -196,7 +198,7 @@ export default function LoginPage() {
               }}
               className="font-semibold text-orange-600 hover:text-orange-700"
             >
-              {isLogin ? "Daftar sekarang" : "Masuk"}
+              {isLogin ? t.loginSignup.signupNow : t.loginSignup.loginNow}
             </button>
           </p>
         </div>

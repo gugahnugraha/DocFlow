@@ -3,66 +3,70 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { FileType, Menu, X, ChevronDown, Layers, LogOut, User } from "lucide-react";
-
-const TOOL_GROUPS = [
-  {
-    label: "Organisir PDF",
-    color: "text-violet-600",
-    bg: "bg-violet-50",
-    tools: [
-      { href: "/merge",   label: "Merge PDF",              desc: "Gabungkan beberapa PDF" },
-      { href: "/split",   label: "Split PDF",              desc: "Pisahkan PDF menjadi bagian" },
-      { href: "/reorder", label: "Susun Ulang Halaman",    desc: "Drag & drop urutan halaman" },
-      { href: "/rotate",  label: "Rotate PDF",             desc: "Putar halaman PDF" },
-    ],
-  },
-  {
-    label: "Edit & Optimalkan",
-    color: "text-orange-600",
-    bg: "bg-orange-50",
-    tools: [
-      { href: "/edit",         label: "Edit PDF",          desc: "Teks, highlight, anotasi" },
-      { href: "/compress",     label: "Compress PDF",      desc: "Perkecil ukuran file" },
-      { href: "/page-numbers", label: "Nomor Halaman",     desc: "Tambah nomor halaman" },
-      { href: "/watermark",    label: "Watermark PDF",     desc: "Tambahkan teks watermark" },
-    ],
-  },
-  {
-    label: "Konversi PDF",
-    color: "text-pink-600",
-    bg: "bg-pink-50",
-    tools: [
-      { href: "/pdf-to-image", label: "PDF ke Gambar",    desc: "Ekspor halaman sebagai JPG/PNG" },
-      { href: "/image-to-pdf", label: "Gambar ke PDF",    desc: "Konversi JPG/PNG ke PDF" },
-    ],
-  },
-  {
-    label: "Keamanan PDF",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    tools: [
-      { href: "/protect", label: "Protect PDF",            desc: "Tambah password ke PDF" },
-      { href: "/unlock",  label: "Unlock PDF",             desc: "Hapus password dari PDF" },
-    ],
-  },
-];
-
-const QUICK_LINKS = [
-  { href: "/merge",    label: "Merge" },
-  { href: "/split",    label: "Split" },
-  { href: "/compress", label: "Compress" },
-  { href: "/edit",     label: "Edit" },
-];
+import { FileType, Menu, X, ChevronDown, Layers, LogOut, User, Globe } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function Header({ activePath }: { activePath?: string }) {
   const { data: session } = useSession();
+  const { t, language, setLanguage } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const TOOL_GROUPS = [
+    {
+      label: t.header.toolGroups.organize,
+      color: "text-violet-600",
+      bg: "bg-violet-50",
+      tools: [
+        { href: "/merge",   label: t.header.tools.merge.label,              desc: t.header.tools.merge.desc },
+        { href: "/split",   label: t.header.tools.split.label,              desc: t.header.tools.split.desc },
+        { href: "/reorder", label: t.header.tools.reorder.label,    desc: t.header.tools.reorder.desc },
+        { href: "/rotate",  label: t.header.tools.rotate.label,             desc: t.header.tools.rotate.desc },
+      ],
+    },
+    {
+      label: t.header.toolGroups.editOptimize,
+      color: "text-orange-600",
+      bg: "bg-orange-50",
+      tools: [
+        { href: "/edit",         label: t.header.tools.edit.label,          desc: t.header.tools.edit.desc },
+        { href: "/compress",     label: t.header.tools.compress.label,      desc: t.header.tools.compress.desc },
+        { href: "/page-numbers", label: t.header.tools.pageNumbers.label,     desc: t.header.tools.pageNumbers.desc },
+        { href: "/watermark",    label: t.header.tools.watermark.label,     desc: t.header.tools.watermark.desc },
+      ],
+    },
+    {
+      label: t.header.toolGroups.convert,
+      color: "text-pink-600",
+      bg: "bg-pink-50",
+      tools: [
+        { href: "/pdf-to-image", label: t.header.tools.pdfToImage.label,    desc: t.header.tools.pdfToImage.desc },
+        { href: "/image-to-pdf", label: t.header.tools.imageToPdf.label,    desc: t.header.tools.imageToPdf.desc },
+      ],
+    },
+    {
+      label: t.header.toolGroups.security,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      tools: [
+        { href: "/protect", label: t.header.tools.protect.label,            desc: t.header.tools.protect.desc },
+        { href: "/unlock",  label: t.header.tools.unlock.label,             desc: t.header.tools.unlock.desc },
+      ],
+    },
+  ];
+
+  const QUICK_LINKS = [
+    { href: "/merge",    label: t.header.quickLinks.merge },
+    { href: "/split",    label: t.header.quickLinks.split },
+    { href: "/compress", label: t.header.quickLinks.compress },
+    { href: "/edit",     label: t.header.quickLinks.edit },
+  ];
 
   // close dropdown on outside click
   useEffect(() => {
@@ -72,6 +76,9 @@ export default function Header({ activePath }: { activePath?: string }) {
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
+      }
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -122,7 +129,7 @@ export default function Header({ activePath }: { activePath?: string }) {
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              Semua Alat
+              {t.header.allTools}
               <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
             </button>
 
@@ -192,6 +199,40 @@ export default function Header({ activePath }: { activePath?: string }) {
 
         {/* ── Right side ── */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Language Toggle */}
+          <div className="relative" ref={langMenuRef}>
+            <button
+              onClick={() => setLangMenuOpen(v => !v)}
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[var(--bg)] text-[var(--text-muted)] transition-colors"
+            >
+              <Globe className="w-5 h-5" />
+            </button>
+            {langMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-32 bg-white border border-[var(--border)] rounded-xl shadow-lg p-2">
+                <button
+                  onClick={() => { setLanguage("id"); setLangMenuOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    language === "id" 
+                      ? "text-orange-600 bg-orange-50" 
+                      : "text-[var(--text-muted)] hover:bg-[var(--bg)]"
+                  }`}
+                >
+                  🇮🇩 Indonesia
+                </button>
+                <button
+                  onClick={() => { setLanguage("en"); setLangMenuOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    language === "en" 
+                      ? "text-orange-600 bg-orange-50" 
+                      : "text-[var(--text-muted)] hover:bg-[var(--bg)]"
+                  }`}
+                >
+                  🇺🇸 English
+                </button>
+              </div>
+            )}
+          </div>
+
           {session?.user ? (
             // User is logged in
             <div className="relative" ref={userMenuRef}>
@@ -217,11 +258,11 @@ export default function Header({ activePath }: { activePath?: string }) {
               {userMenuOpen && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-[var(--border)] rounded-xl shadow-lg p-2">
                   <button
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ callbackUrl: "/" })}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-muted)] hover:text-red-600 hover:bg-red-50 transition-all duration-200"
                   >
                     <LogOut className="w-4 h-4" />
-                    Keluar
+                    {t.header.logout}
                   </button>
                 </div>
               )}
@@ -233,13 +274,13 @@ export default function Header({ activePath }: { activePath?: string }) {
                 onClick={() => signIn()}
                 className="hidden md:block btn-ghost btn-sm rounded-xl text-sm font-semibold px-3 py-2 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-all duration-200"
               >
-                Masuk
+                {t.header.login}
               </button>
               <button
                 onClick={() => signIn()}
                 className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 hover:-translate-y-0.5"
               >
-                Daftar Gratis
+                {t.header.signup}
               </button>
             </>
           )}
@@ -247,7 +288,7 @@ export default function Header({ activePath }: { activePath?: string }) {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen(v => !v)}
-            aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+            aria-label={menuOpen ? t.header.mobileMenuAria.close : t.header.mobileMenuAria.open}
             className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[var(--bg)] text-[var(--text-muted)] transition-colors"
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -282,30 +323,57 @@ export default function Header({ activePath }: { activePath?: string }) {
                 </div>
               </div>
             ))}
-            <div className="pt-3 border-t border-[var(--border)] grid grid-cols-2 gap-2">
-              {session?.user ? (
+            <div className="pt-3 border-t border-[var(--border)] space-y-2">
+              {/* Mobile Language Toggle */}
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => signOut()}
-                  className="col-span-2 py-2.5 border border-red-200 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50"
+                  onClick={() => setLanguage("id")}
+                  className={`py-2.5 border rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    language === "id" 
+                      ? "border-orange-500 bg-orange-50 text-orange-600" 
+                      : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg)]"
+                  }`}
                 >
-                  Keluar
+                  🇮🇩 Indonesia
                 </button>
-              ) : (
-                <>
+                <button
+                  onClick={() => setLanguage("en")}
+                  className={`py-2.5 border rounded-xl text-sm font-semibold transition-all duration-200 ${
+                    language === "en" 
+                      ? "border-orange-500 bg-orange-50 text-orange-600" 
+                      : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg)]"
+                  }`}
+                >
+                  🇺🇸 English
+                </button>
+              </div>
+              
+              {/* Auth Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                {session?.user ? (
                   <button
-                    onClick={() => signIn()}
-                    className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)]"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="col-span-2 py-2.5 border border-red-200 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50"
                   >
-                    Masuk
+                    {t.header.logout}
                   </button>
-                  <button
-                    onClick={() => signIn()}
-                    className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold"
-                  >
-                    Daftar Gratis
-                  </button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <button
+                      onClick={() => signIn()}
+                      className="py-2.5 border border-[var(--border)] rounded-xl text-sm font-semibold text-[var(--text-muted)]"
+                    >
+                      {t.header.login}
+                    </button>
+                    <button
+                      onClick={() => signIn()}
+                      className="py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl text-sm font-semibold"
+                    >
+                      {t.header.signup}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
