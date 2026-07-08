@@ -13,6 +13,7 @@ const handler = NextAuth({
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      allowDangerousEmailAccountLinking: true, // Optional but helpful for linking accounts
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -50,7 +51,14 @@ const handler = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        // Optional: do any checks here if needed
+      }
+      return true
+    },
+    async jwt({ token, user, account, profile }) {
+      // When user signs in, add their id to the token
       if (user) {
         token.id = user.id
       }
@@ -63,6 +71,7 @@ const handler = NextAuth({
       return session
     },
   },
+  debug: true, // Enable debug mode to see logs!
 })
 
 export { handler as GET, handler as POST }
