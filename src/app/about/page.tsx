@@ -54,7 +54,7 @@ export default function About() {
 
         {/* Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          
+
           {/* Left Column: Product Info & Why Us */}
           <div className="lg:col-span-7 space-y-10">
             <div className="space-y-4">
@@ -78,7 +78,7 @@ export default function About() {
                 {translations.featuresTitle}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                
+
                 {/* Feature 1 */}
                 <div className="card p-5 space-y-3 hover:shadow-lg transition-all duration-300">
                   <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600">
@@ -125,13 +125,13 @@ export default function About() {
           {/* Right Column: Developer Profile Card */}
           <div className="lg:col-span-5 flex flex-col justify-start">
             <div className="card p-8 relative overflow-hidden border border-white/40 shadow-xl hover:shadow-2xl transition-all duration-500">
-              
+
               {/* Background gradient accents */}
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
               <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
 
               <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-                
+
                 {/* Creator Avatar container */}
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-orange-500 via-orange-600 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform duration-300">
@@ -164,7 +164,7 @@ export default function About() {
                     {translations.connectTitle}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    
+
                     {/* GitHub button */}
                     <a
                       href="https://github.com/gugahnugraha"
@@ -178,7 +178,7 @@ export default function About() {
 
                     {/* Instagram button */}
                     <a
-                      href="https://instagram.com/@gugahnugraha"
+                      href="https://instagram.com/gugahnugraha"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-5 rounded-xl border border-[var(--border)] bg-white text-sm font-bold text-[var(--text)] hover:bg-gradient-to-tr hover:from-yellow-500 hover:via-pink-500 hover:to-purple-600 hover:text-white hover:border-transparent transition-all duration-300 hover:-translate-y-0.5 shadow-sm"

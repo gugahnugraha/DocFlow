@@ -62,10 +62,6 @@ export default function Header({ activePath }: { activePath?: string }) {
   ];
 
   const QUICK_LINKS = [
-    { href: "/merge",    label: t.header.quickLinks.merge },
-    { href: "/split",    label: t.header.quickLinks.split },
-    { href: "/compress", label: t.header.quickLinks.compress },
-    { href: "/edit",     label: t.header.quickLinks.edit },
     { href: "/about",    label: t.header.about },
   ];
 
@@ -141,10 +137,10 @@ export default function Header({ activePath }: { activePath?: string }) {
                 onMouseEnter={openDropdown}
                 onMouseLeave={closeDropdown}
               >
-                <div className="bg-white/65 backdrop-blur-xl border border-white/30 rounded-2xl shadow-[0_20px_45px_-30px_rgba(15,23,42,0.55)] p-5 grid grid-cols-2 gap-6">
+                <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-800/80 rounded-2xl shadow-[0_20px_45px_-30px_rgba(15,23,42,0.55)] p-5 grid grid-cols-2 gap-6">
                   {TOOL_GROUPS.map((group) => (
                     <div key={group.label}>
-                      <p className="text-[10px] font-bold text-[var(--text-subtle)] uppercase tracking-widest mb-2.5 px-1">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 px-1">
                         {group.label}
                       </p>
                       <div className="space-y-0.5">
@@ -154,20 +150,20 @@ export default function Header({ activePath }: { activePath?: string }) {
                             href={tool.href}
                             className={`flex items-start gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 group ${
                               activePath === tool.href
-                                ? "bg-orange-50"
-                                : "hover:bg-[var(--bg)]"
+                                ? "bg-orange-500/10 text-orange-400"
+                                : "hover:bg-slate-800/50"
                             }`}
                           >
                             <div className={`w-1.5 h-1.5 rounded-full mt-[7px] flex-shrink-0 ${
-                              activePath === tool.href ? "bg-orange-500" : "bg-[var(--border)] group-hover:bg-orange-300"
+                              activePath === tool.href ? "bg-orange-500" : "bg-slate-700 group-hover:bg-orange-400"
                             } transition-colors`} />
                             <div>
                               <p className={`text-[13px] font-semibold leading-tight ${
-                                activePath === tool.href ? "text-orange-600" : "text-[var(--text)] group-hover:text-orange-600"
+                                activePath === tool.href ? "text-orange-400" : "text-slate-200 group-hover:text-orange-400"
                               } transition-colors`}>
                                 {tool.label}
                               </p>
-                              <p className="text-[11px] text-[var(--text-subtle)] mt-0.5">{tool.desc}</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5">{tool.desc}</p>
                             </div>
                           </Link>
                         ))}
