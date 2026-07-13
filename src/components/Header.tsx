@@ -66,6 +66,7 @@ export default function Header({ activePath }: { activePath?: string }) {
     { href: "/split",    label: t.header.quickLinks.split },
     { href: "/compress", label: t.header.quickLinks.compress },
     { href: "/edit",     label: t.header.quickLinks.edit },
+    { href: "/about",    label: t.header.about },
   ];
 
   // close dropdown on outside click
@@ -324,6 +325,17 @@ export default function Header({ activePath }: { activePath?: string }) {
               </div>
             ))}
             <div className="pt-3 border-t border-[var(--border)] space-y-2">
+              <Link
+                href="/about"
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  activePath === "/about"
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg)]"
+                }`}
+              >
+                {t.header.about}
+              </Link>
               {/* Mobile Language Toggle */}
               <div className="grid grid-cols-2 gap-2">
                 <button

@@ -177,7 +177,7 @@ export default function Home() {
                     <Link
                       key={tool.href}
                       href={tool.href}
-                      className="group card-hover flex items-start gap-3.5 p-4"
+                      className="group card-hover flex items-start gap-3.5 p-4 hover:shadow-lg hover:shadow-orange-500/5 hover:border-orange-500/20 transition-all duration-300"
                     >
                       {/* Icon */}
                       <div
@@ -335,7 +335,7 @@ export default function Home() {
               © {new Date().getFullYear()} DocFlow. {t.pages.home.copyright}
             </p>
             <div className="flex items-center gap-5 text-xs text-[var(--text-subtle)]">
-              <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.about}</a>
+              <Link href="/about" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.about}</Link>
               <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.privacy}</a>
               <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.faq}</a>
               <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.contact}</a>

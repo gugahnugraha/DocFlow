@@ -99,6 +99,7 @@ export default {
     login: "Login",
     signup: "Sign Up Free",
     logout: "Logout",
+    about: "About",
     mobileMenuAria: {
       open: "Open menu",
       close: "Close menu",
@@ -248,6 +249,32 @@ export default {
         contact: "Contact",
       },
       copyright: "Free for everyone.",
+    },
+    about: {
+      title: "About Us",
+      subtitle: "Our mission is to simplify your PDF document management",
+      description: "DocFlow is a modern, fast, and secure PDF SaaS application designed to help you manipulate PDF documents right in your browser with high performance and complete privacy.",
+      authorTitle: "Lead Developer",
+      authorName: "Gugah Nugraha",
+      authorDesc: "Gugah Nugraha is a Software Engineer focused on building high-performance, modern, and user-friendly web applications. Driven by a passion for open-source development, he designed DocFlow to be the ultimate PDF SaaS solution, prioritizing privacy and easy accessibility for everyone.",
+      connectTitle: "Connect With Me",
+      githubLabel: "GitHub",
+      instagramLabel: "Instagram",
+      featuresTitle: "Why Choose Us?",
+      features: {
+        speed: {
+          title: "Fast Performance",
+          desc: "Powered by modern technologies for lightning-fast document processing right in your browser."
+        },
+        privacy: {
+          title: "Privacy First",
+          desc: "We value your data. Most manipulations are done locally in your browser for absolute privacy."
+        },
+        ux: {
+          title: "Premium UI/UX",
+          desc: "A clean, intuitive, and responsive interface designed for your productivity."
+        }
+      }
     },
     merge: {
       title: "Merge PDF",

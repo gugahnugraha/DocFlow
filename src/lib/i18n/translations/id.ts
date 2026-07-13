@@ -99,6 +99,7 @@ export default {
     login: "Masuk",
     signup: "Daftar Gratis",
     logout: "Keluar",
+    about: "Tentang",
     mobileMenuAria: {
       open: "Buka menu",
       close: "Tutup menu",
@@ -248,6 +249,32 @@ export default {
         contact: "Kontak",
       },
       copyright: "Gratis untuk semua.",
+    },
+    about: {
+      title: "Tentang Kami",
+      subtitle: "Misi kami adalah mempermudah pengelolaan dokumen PDF Anda",
+      description: "DocFlow adalah aplikasi SaaS PDF modern, cepat, dan aman, yang dirancang untuk membantu Anda memanipulasi dokumen PDF langsung di browser Anda dengan performa tinggi dan privasi penuh.",
+      authorTitle: "Pengembang Utama",
+      authorName: "Gugah Nugraha",
+      authorDesc: "Gugah Nugraha adalah seorang Software Engineer yang berfokus pada pembangunan aplikasi web berkinerja tinggi, modern, dan ramah pengguna. Dengan hasrat besar dalam pengembangan open source, ia merancang DocFlow untuk menjadi solusi SaaS pengelolaan PDF terbaik yang mengedepankan privasi dan kemudahan akses bagi semua orang.",
+      connectTitle: "Hubungi Saya",
+      githubLabel: "GitHub",
+      instagramLabel: "Instagram",
+      featuresTitle: "Kenapa Memilih Kami?",
+      features: {
+        speed: {
+          title: "Performa Cepat",
+          desc: "Didukung oleh teknologi modern untuk pemrosesan dokumen secepat kilat langsung di browser Anda."
+        },
+        privacy: {
+          title: "Privasi Utama",
+          desc: "Kami menghargai data Anda. Sebagian besar proses manipulasi dilakukan secara lokal untuk privasi maksimal."
+        },
+        ux: {
+          title: "UI/UX Premium",
+          desc: "Tampilan antarmuka yang bersih, intuitif, dan responsif untuk kenyamanan kerja Anda."
+        }
+      }
     },
     merge: {
       title: "Merge PDF",
