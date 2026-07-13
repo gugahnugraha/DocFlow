@@ -209,6 +209,20 @@ body {
     @apply block text-xs font-semibold text-[var(--text-muted)]
            uppercase tracking-wide mb-2;
   }
+
+  /* ─ Dark Cards for Homepage ───────── */
+  .card-dark {
+    @apply rounded-2xl border border-slate-800/80 bg-slate-900/75 backdrop-blur-xl
+           shadow-[0_10px_30px_-15px_rgba(0,0,0,0.35)];
+  }
+  .card-dark-hover {
+    @apply card-dark transition-all duration-300;
+  }
+  .card-dark-hover:hover {
+    box-shadow: 0 20px 35px -18px rgba(0,0,0,0.55);
+    transform: translateY(-4px);
+    border-color: rgba(249, 115, 22, 0.4);
+  }
 }
 
 /* ── Utility: brand text ──────────────────────────────────────────────────── */
