@@ -78,7 +78,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #fffbeb 0%, #faf5ff 50%, #ecfdf5 100%)" }}>
       <Header activePath="/" />
 
       {/* ══════════════════════════════════════════════════════ HERO */}
@@ -177,7 +177,8 @@ export default function Home() {
                     <Link
                       key={tool.href}
                       href={tool.href}
-                      className="group card-dark-hover flex items-start gap-3.5 p-4 hover:shadow-lg hover:shadow-orange-500/10 hover:border-orange-500/35 transition-all duration-300"
+                      className="group flex items-start gap-3.5 p-4 rounded-2xl border shadow-[0_4px_20px_-10px_rgba(15,23,42,0.1)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                      style={{ borderColor: `${tool.accent}80`, borderWidth: '1.5px', backgroundColor: 'rgba(255, 255, 255, 0.75)' }}
                     >
                       {/* Icon */}
                       <div
@@ -189,17 +190,18 @@ export default function Home() {
 
                       {/* Text */}
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-100 group-hover:text-orange-400 transition-colors leading-snug">
+                        <p className="text-sm font-bold text-slate-800 group-hover:text-orange-600 transition-colors leading-snug">
                           {copy.title}
                         </p>
-                        <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                        <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                           {copy.desc}
                         </p>
                       </div>
 
                       {/* Arrow */}
                       <ArrowRight
-                        className="w-4 h-4 text-slate-600 group-hover:text-orange-400 flex-shrink-0 ml-auto mt-1 transition-all duration-200 group-hover:translate-x-0.5"
+                        className="w-4 h-4 flex-shrink-0 ml-auto mt-1 transition-all duration-200 group-hover:translate-x-0.5"
+                        style={{ color: tool.accent }}
                       />
                     </Link>
                   );
@@ -211,13 +213,13 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════ FEATURES */}
-      <section className="border-t border-[var(--border)] bg-white py-16 px-5">
+      <section className="border-t border-[var(--border)] bg-white/30 backdrop-blur-sm py-16 px-5">
         <div className="max-w-screen-xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-extrabold text-[var(--text)] tracking-tight mb-3">
+            <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight mb-3">
               {t.pages.home.whyTitle}
             </h2>
-            <p className="text-[var(--text-muted)] max-w-lg mx-auto">
+            <p className="text-slate-600 max-w-lg mx-auto">
               {t.pages.home.whySubtitle}
             </p>
           </div>
@@ -227,15 +229,19 @@ export default function Home() {
               const Icon = f.icon;
               const item = t.pages.home.whyItems[f.key as keyof typeof t.pages.home.whyItems];
               return (
-                <div key={f.key} className="card-dark p-6 text-center hover:shadow-lg hover:shadow-orange-500/5 hover:border-orange-500/20 transition-all duration-300">
+                <div
+                  key={f.key}
+                  className="flex flex-col items-center p-6 text-center rounded-2xl border shadow-[0_4px_20px_-10px_rgba(15,23,42,0.1)] hover:shadow-lg transition-all duration-300"
+                  style={{ borderColor: `${f.accent}80`, borderWidth: '1.5px', backgroundColor: 'rgba(255, 255, 255, 0.75)' }}
+                >
                   <div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                     style={{ background: f.bg }}
                   >
                     <Icon className="w-7 h-7" style={{ color: f.accent }} />
                   </div>
-                  <h3 className="font-bold text-slate-100 mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                  <h3 className="font-bold text-slate-800 mb-2">{item.title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
                 </div>
               );
             })}
@@ -244,26 +250,33 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════ TESTIMONIALS */}
-      <section className="py-16 px-5" style={{ background: "var(--bg)" }}>
+      <section className="py-16 px-5 bg-transparent">
         <div className="max-w-screen-xl mx-auto">
-          <h2 className="text-2xl font-extrabold text-[var(--text)] text-center mb-8 tracking-tight">
+          <h2 className="text-2xl font-extrabold text-slate-800 text-center mb-8 tracking-tight">
             {t.pages.home.testimonialsTitle}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {t.pages.home.testimonials.map((it) => (
-              <div key={it.name} className="card-dark p-5 hover:shadow-lg hover:shadow-orange-500/5 hover:border-orange-500/20 transition-all duration-300">
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-orange-500 text-orange-500" />
-                  ))}
+            {t.pages.home.testimonials.map((it, i) => {
+              const cardColor = ["#8b5cf6", "#10b981", "#f97316"][i % 3];
+              return (
+                <div
+                  key={it.name}
+                  className="flex flex-col p-5 rounded-2xl border shadow-[0_4px_20px_-10px_rgba(15,23,42,0.1)] hover:shadow-lg transition-all duration-300"
+                  style={{ borderColor: `${cardColor}80`, borderWidth: '1.5px', backgroundColor: 'rgba(255, 255, 255, 0.75)' }}
+                >
+                  <div className="flex items-center gap-1 mb-3">
+                    {[...Array(5)].map((_, index) => (
+                      <Star key={index} className="w-3.5 h-3.5 fill-current" style={{ color: cardColor }} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed mb-4">"{it.text}"</p>
+                  <div className="mt-auto">
+                    <p className="text-sm font-semibold text-slate-800">{it.name}</p>
+                    <p className="text-xs text-slate-500">{it.role}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-300 leading-relaxed mb-4">"{it.text}"</p>
-                <div>
-                  <p className="text-sm font-semibold text-slate-100">{it.name}</p>
-                  <p className="text-xs text-slate-400">{it.role}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
