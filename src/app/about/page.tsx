@@ -37,7 +37,7 @@ export default function About() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #fffbeb 0%, #faf5ff 50%, #ecfdf5 100%)" }}>
       <Header activePath="/about" />
 
       <main className="flex-1 max-w-screen-xl w-full mx-auto px-5 py-12">
