@@ -104,6 +104,13 @@ export default {
       open: "Open menu",
       close: "Close menu",
     },
+    userMenu: {
+      dashboard: "Dashboard",
+      settings: "Account Settings",
+      upgrade: "Upgrade to Pro",
+      donate: "Donate",
+      help: "Help & Support",
+    },
   },
   // Homepage
   homepage: {
@@ -191,8 +198,25 @@ export default {
     },
   },
   pages: {
+    donate: {
+      title: "Support DocFlow",
+      description: "Help us keep these tools free forever.",
+      button: "Donate Now",
+    },
+    privacy: {
+      title: "Privacy Policy",
+      description: "How we handle your data and protect your privacy.",
+    },
+    faq: {
+      title: "Frequently Asked Questions",
+      description: "Find answers to common questions about DocFlow.",
+    },
+    contact: {
+      title: "Contact Us",
+      description: "Get in touch with our team for support or inquiries.",
+    },
     home: {
-      badge: "12 free PDF tools — no signup",
+      badge: "12 free PDF tools",
       titlePrefix: "Everything you need for",
       titleHighlight: "PDF documents",
       description:
@@ -202,7 +226,7 @@ export default {
       stats: [
         { value: "12+", label: "Free PDF tools" },
         { value: "100%", label: "No installation" },
-        { value: "Free", label: "No signup" },
+        { value: "Secure", label: "Privacy first" },
       ],
       categories: {
         organize: "Organize",
@@ -230,7 +254,7 @@ export default {
       whyItems: {
         fast: { title: "Fast & Lightweight", desc: "Process PDFs in seconds right in your browser — no waiting for server uploads." },
         privacy: { title: "Privacy First", desc: "Your files are handled securely. Nothing is stored on our servers after processing." },
-        access: { title: "Access Anywhere", desc: "Use any browser — laptop, tablet, or phone. No account or extra apps required." },
+        access: { title: "Access Anywhere", desc: "Use any browser — laptop, tablet, or phone. No extra apps required." },
       },
       testimonialsTitle: "Trusted by thousands",
       testimonials: [
@@ -239,10 +263,10 @@ export default {
         { name: "Dewi K.", role: "Project Manager", text: "The watermark and page number tools help a lot in my daily work." },
       ],
       ctaTitle: "Ready to start? Free forever.",
-      ctaSubtitle: "No credit card. No signup. Just use it.",
+      ctaSubtitle: "No credit card required. Just use it.",
       ctaButton: "Try Now",
       footer: {
-        desc: "Free online PDF tools. No installation, no signup required.",
+        desc: "Free online PDF tools. No installation required.",
         about: "About",
         privacy: "Privacy",
         faq: "FAQ",

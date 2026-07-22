@@ -42,14 +42,38 @@ const config: Config = {
         "brand-sm": "0 2px 12px -2px rgba(230,72,9,0.25)",
       },
       animation: {
-        "fade-in":   "fadeIn 0.2s ease-out",
-        "slide-up":  "slideUp 0.25s ease-out",
+        "fade-in":   "fadeIn 0.5s ease-out forwards",
+        "fade-up":   "fadeUp 0.6s ease-out forwards",
+        "fade-down": "fadeDown 0.6s ease-out forwards",
+        "slide-up":  "slideUp 0.3s ease-out",
         "pulse-ring":"pulseRing 1.5s cubic-bezier(0.4,0,0.6,1) infinite",
+        "slide-in-right": "slideInRight 0.5s ease-out forwards",
       },
       keyframes: {
-        fadeIn:   { from: { opacity: "0" },                    to: { opacity: "1" } },
-        slideUp:  { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
-        pulseRing:{ "0%,100%": { opacity: "1" },               "50%": { opacity: ".4" } },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        fadeUp: {
+          "0%": { opacity: "0", transform: "translateY(24px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        fadeDown: {
+          "0%": { opacity: "0", transform: "translateY(-24px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        slideUp: {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        pulseRing: {
+          "0%,100%": { opacity: "1" },
+          "50%": { opacity: ".4" },
+        },
+        slideInRight: {
+          "0%": { opacity: "0", transform: "translateX(20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
       },
     },
   },

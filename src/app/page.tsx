@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import HeroTypewriter from "@/components/HeroTypewriter";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const TOOL_UI = [
@@ -109,16 +111,11 @@ export default function Home() {
           </div>
 
           {/* Heading */}
-          <h1 className="text-center text-[clamp(2.2rem,5vw,3.75rem)] font-extrabold leading-[1.1] tracking-tight text-[var(--text)] max-w-3xl mx-auto text-balance mb-5">
-            {t.pages.home.titlePrefix}{" "}
-            <span
-              className="relative inline-block bg-gradient-to-r from-orange-500 via-orange-600 to-red-500 bg-clip-text text-transparent"
-            >
-              {t.pages.home.titleHighlight}
-              <span
-                className="absolute -bottom-1 left-0 right-0 h-[3px] rounded-full bg-gradient-to-r from-orange-500 to-red-500 opacity-60"
-              />
-            </span>
+          <h1 className="text-center text-[clamp(2.2rem,5vw,3.75rem)] font-extrabold leading-[1.1] tracking-tight text-[var(--text)] max-w-3xl mx-auto text-balance mb-5 min-h-[1.1em]">
+            <HeroTypewriter 
+              prefix={t.pages.home.titlePrefix} 
+              highlight={t.pages.home.titleHighlight} 
+            />
           </h1>
 
           <p className="text-center text-lg text-[var(--text-muted)] max-w-xl mx-auto mb-10 leading-relaxed">
@@ -169,8 +166,8 @@ export default function Home() {
                 <span className="text-xs text-[var(--text-subtle)]">{items.length} {t.pages.home.toolsCountSuffix}</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {items.map((tool) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {items.map((tool, index) => {
                   const Icon = tool.icon;
                   const copy = t.pages.home.tools[tool.tKey as keyof typeof t.pages.home.tools];
                   return (
@@ -304,58 +301,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════ FOOTER */}
-      <footer className="bg-white border-t border-[var(--border)] py-10 px-5">
-        <div className="max-w-screen-xl mx-auto">
-          <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-8">
-            {/* Brand */}
-            <div className="max-w-xs">
-              <Link href="/" className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                  <FileType className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-lg font-bold">
-                  <span className="text-[var(--text)]">Doc</span>
-                  <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">Flow</span>
-                </span>
-              </Link>
-              <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-                {t.pages.home.footer.desc}
-              </p>
-            </div>
-
-            {/* Links */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-sm">
-              {FOOTER_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <p className="font-bold text-[var(--text)] mb-3">{group.label}</p>
-                  <ul className="space-y-2">
-                    {group.links.map((l) => (
-                      <li key={l.href}>
-                        <Link href={l.href} className="text-[var(--text-muted)] hover:text-orange-500 transition-colors">
-                          {l.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-[var(--border)] pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-[var(--text-subtle)]">
-              © {new Date().getFullYear()} DocFlow. {t.pages.home.copyright}
-            </p>
-            <div className="flex items-center gap-5 text-xs text-[var(--text-subtle)]">
-              <Link href="/about" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.about}</Link>
-              <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.privacy}</a>
-              <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.faq}</a>
-              <a href="#" className="hover:text-brand-500 transition-colors">{t.pages.home.footer.contact}</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -104,6 +104,13 @@ export default {
       open: "Buka menu",
       close: "Tutup menu",
     },
+    userMenu: {
+      dashboard: "Dashboard",
+      settings: "Pengaturan Akun",
+      upgrade: "Upgrade ke Pro",
+      donate: "Donasi",
+      help: "Bantuan & Dukungan",
+    },
   },
   // Homepage
   homepage: {
@@ -191,8 +198,25 @@ export default {
     },
   },
   pages: {
+    donate: {
+      title: "Dukung DocFlow",
+      description: "Bantu kami menjaga alat ini tetap gratis selamanya.",
+      button: "Donasi Sekarang",
+    },
+    privacy: {
+      title: "Kebijakan Privasi",
+      description: "Bagaimana kami menangani data Anda dan melindungi privasi Anda.",
+    },
+    faq: {
+      title: "Pertanyaan yang Sering Diajukan",
+      description: "Temukan jawaban untuk pertanyaan umum tentang DocFlow.",
+    },
+    contact: {
+      title: "Hubungi Kami",
+      description: "Hubungi tim kami untuk dukungan atau pertanyaan.",
+    },
     home: {
-      badge: "12 alat PDF gratis — tanpa daftar",
+      badge: "12 alat PDF gratis",
       titlePrefix: "Semua yang kamu butuhkan untuk",
       titleHighlight: "dokumen PDF",
       description:
@@ -202,7 +226,7 @@ export default {
       stats: [
         { value: "12+", label: "Alat PDF gratis" },
         { value: "100%", label: "Tanpa instalasi" },
-        { value: "Gratis", label: "Tanpa daftar" },
+        { value: "Aman", label: "Privasi terjaga" },
       ],
       categories: {
         organize: "Organisir",
@@ -230,7 +254,7 @@ export default {
       whyItems: {
         fast: { title: "Cepat & Ringan", desc: "Proses PDF langsung di browser dalam hitungan detik — tidak perlu menunggu upload ke server." },
         privacy: { title: "Privasi Terjaga", desc: "File kamu diproses dengan aman. Tidak ada yang disimpan di server kami setelah proses selesai." },
-        access: { title: "Akses di Mana Saja", desc: "Buka dari browser apa pun — laptop, tablet, atau ponsel. Tidak perlu akun atau aplikasi tambahan." },
+        access: { title: "Akses di Mana Saja", desc: "Buka dari browser apa pun — laptop, tablet, atau ponsel. Tidak perlu aplikasi tambahan." },
       },
       testimonialsTitle: "Dipercaya ribuan pengguna",
       testimonials: [
@@ -239,10 +263,10 @@ export default {
         { name: "Dewi K.", role: "Manajer Proyek", text: "Fitur watermark dan nomor halaman sangat membantu pekerjaan harian saya." },
       ],
       ctaTitle: "Siap mulai? Gratis selamanya.",
-      ctaSubtitle: "Tidak perlu kartu kredit. Tidak perlu daftar. Langsung pakai.",
+      ctaSubtitle: "Tidak perlu kartu kredit. Langsung pakai.",
       ctaButton: "Coba Sekarang",
       footer: {
-        desc: "Platform alat PDF online gratis. Tidak perlu instalasi, tidak perlu daftar.",
+        desc: "Platform alat PDF online gratis. Tidak perlu instalasi.",
         about: "Tentang",
         privacy: "Privasi",
         faq: "FAQ",

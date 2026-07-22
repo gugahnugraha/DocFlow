@@ -196,17 +196,6 @@ export default function About() {
 
         </div>
       </main>
-
-      {/* Mini Footer */}
-      <footer className="bg-white/80 border-t border-[var(--border)] py-6 px-5 mt-auto">
-        <div className="max-w-screen-xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--text-subtle)]">
-          <p>© {new Date().getFullYear()} DocFlow. {t.pages.home.copyright}</p>
-          <div className="flex gap-4">
-            <Link href="/" className="hover:text-orange-500 transition-colors">Beranda</Link>
-            <a href="#" className="hover:text-orange-500 transition-colors">{t.pages.home.footer.privacy}</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

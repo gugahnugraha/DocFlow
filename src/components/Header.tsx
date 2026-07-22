@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { FileType, Menu, X, ChevronDown, Layers, LogOut, User, Globe } from "lucide-react";
+import { FileType, Menu, X, ChevronDown, Layers, LogOut, Globe, FileText, Settings, Sparkles, HelpCircle, Heart } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function Header({ activePath }: { activePath?: string }) {
@@ -197,37 +197,23 @@ export default function Header({ activePath }: { activePath?: string }) {
         {/* ── Right side ── */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Language Toggle */}
-          <div className="relative" ref={langMenuRef}>
+          <div className="hidden sm:flex relative items-center bg-slate-100/80 p-1 rounded-full border border-slate-200/60 shadow-inner mr-2">
+            <div 
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-full shadow-sm transition-transform duration-300 ease-out"
+              style={{ transform: language === "en" ? "translateX(calc(100% + 4px))" : "translateX(0)" }}
+            />
             <button
-              onClick={() => setLangMenuOpen(v => !v)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[var(--bg)] text-[var(--text-muted)] transition-colors"
+              onClick={() => setLanguage("id")}
+              className={`relative z-10 w-9 py-1 text-[11px] font-extrabold tracking-wider transition-colors duration-300 ${language === "id" ? "text-orange-600" : "text-slate-400 hover:text-slate-600"}`}
             >
-              <Globe className="w-5 h-5" />
+              ID
             </button>
-            {langMenuOpen && (
-              <div className="absolute top-full right-0 mt-2 w-32 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl shadow-[0_18px_40px_-26px_rgba(15,23,42,0.55)] p-2">
-                <button
-                  onClick={() => { setLanguage("id"); setLangMenuOpen(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                    language === "id" 
-                      ? "text-orange-600 bg-orange-50" 
-                      : "text-[var(--text-muted)] hover:bg-[var(--bg)]"
-                  }`}
-                >
-                  🇮🇩 {t.common.languages.id}
-                </button>
-                <button
-                  onClick={() => { setLanguage("en"); setLangMenuOpen(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                    language === "en" 
-                      ? "text-orange-600 bg-orange-50" 
-                      : "text-[var(--text-muted)] hover:bg-[var(--bg)]"
-                  }`}
-                >
-                  🇺🇸 {t.common.languages.en}
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => setLanguage("en")}
+              className={`relative z-10 w-9 py-1 text-[11px] font-extrabold tracking-wider transition-colors duration-300 ${language === "en" ? "text-orange-600" : "text-slate-400 hover:text-slate-600"}`}
+            >
+              EN
+            </button>
           </div>
 
           {session?.user ? (
@@ -253,10 +239,43 @@ export default function Header({ activePath }: { activePath?: string }) {
                 </span>
               </button>
               {userMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl shadow-[0_18px_40px_-26px_rgba(15,23,42,0.55)] p-2">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white/85 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-[0_18px_40px_-26px_rgba(15,23,42,0.55)] p-2 z-50 flex flex-col gap-1">
+                  {/* User Info Header */}
+                  <div className="px-3 py-3 mb-1 border-b border-slate-100 flex flex-col">
+                    <p className="text-sm font-bold text-slate-800 truncate">{session.user.name}</p>
+                    <p className="text-xs font-medium text-slate-400 truncate">{session.user.email}</p>
+                  </div>
+                  
+                  {/* Menu Items */}
+                  <Link href="/dashboard" className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors">
+                    <FileText className="w-4 h-4" />
+                    {t.header.userMenu?.dashboard || "Dashboard"}
+                  </Link>
+                  <Link href="/settings" className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors">
+                    <Settings className="w-4 h-4" />
+                    {t.header.userMenu?.settings || "Account Settings"}
+                  </Link>
+                  {/* <Link href="/pricing" className="flex items-center gap-2.5 px-3 py-2 mt-1 rounded-xl text-sm font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 transition-colors">
+                    <Sparkles className="w-4 h-4" />
+                    {t.header.userMenu?.upgrade || "Upgrade to Pro"}
+                  </Link> */}
+                  <Link href="/donate" className="flex items-center gap-2.5 px-3 py-2 mt-1 rounded-xl text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                    <Heart className="w-4 h-4" />
+                    {t.header.userMenu?.donate || "Donate"}
+                  </Link>
+                  
+                  <div className="h-px bg-slate-100 my-1.5" />
+                  
+                  <Link href="/help" className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors">
+                    <HelpCircle className="w-4 h-4" />
+                    {t.header.userMenu?.help || "Help & Support"}
+                  </Link>
+                  
+                  <div className="h-px bg-slate-100 my-1.5" />
+                  
                   <button
                     onClick={() => signOut({ callbackUrl: "/" })}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-muted)] hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors text-left"
                   >
                     <LogOut className="w-4 h-4" />
                     {t.header.logout}
@@ -333,24 +352,20 @@ export default function Header({ activePath }: { activePath?: string }) {
                 {t.header.about}
               </Link>
               {/* Mobile Language Toggle */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex relative items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 shadow-inner">
+                <div 
+                  className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-out"
+                  style={{ transform: language === "en" ? "translateX(calc(100% + 4px))" : "translateX(0)" }}
+                />
                 <button
                   onClick={() => setLanguage("id")}
-                  className={`py-2.5 border rounded-xl text-sm font-semibold transition-all duration-200 ${
-                    language === "id" 
-                      ? "border-orange-500 bg-orange-50 text-orange-600" 
-                      : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg)]"
-                  }`}
+                  className={`relative z-10 flex-1 py-2 text-xs font-bold transition-colors duration-300 ${language === "id" ? "text-orange-600" : "text-slate-400"}`}
                 >
                   🇮🇩 {t.common.languages.id}
                 </button>
                 <button
                   onClick={() => setLanguage("en")}
-                  className={`py-2.5 border rounded-xl text-sm font-semibold transition-all duration-200 ${
-                    language === "en" 
-                      ? "border-orange-500 bg-orange-50 text-orange-600" 
-                      : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg)]"
-                  }`}
+                  className={`relative z-10 flex-1 py-2 text-xs font-bold transition-colors duration-300 ${language === "en" ? "text-orange-600" : "text-slate-400"}`}
                 >
                   🇺🇸 {t.common.languages.en}
                 </button>
