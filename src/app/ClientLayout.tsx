@@ -3,6 +3,7 @@
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { useEffect } from "react";
 import Footer from "@/components/Footer";
+import CookieBanner from "@/components/CookieBanner";
 
 export default function ClientLayout({
   children,
@@ -21,6 +22,7 @@ export default function ClientLayout({
         {children}
       </div>
       <Footer />
+      <CookieBanner />
     </div>
   );
 }
