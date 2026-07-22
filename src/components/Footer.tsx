@@ -56,7 +56,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-slate-900/80 backdrop-blur-md border-t border-slate-700/50 py-10 px-5 text-slate-200 mt-auto">
+    <footer className="bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 py-12 md:py-16 px-5 mt-auto">
       <div className="max-w-screen-xl mx-auto">
         <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-8">
           {/* Brand */}
@@ -70,7 +70,7 @@ export default function Footer() {
                 <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">Flow</span>
               </span>
             </Link>
-            <p className="text-sm text-slate-300 leading-relaxed font-medium">
+            <p className="text-[13px] text-slate-400 leading-relaxed font-medium mt-2">
               {t.pages.home.footer.desc}
             </p>
           </div>
@@ -79,11 +79,11 @@ export default function Footer() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-sm w-full md:w-auto flex-1 md:pl-10">
             {FOOTER_GROUPS.map((group) => (
               <div key={group.label}>
-                <p className="font-bold text-white mb-3 tracking-wide">{group.label}</p>
-                <ul className="space-y-2">
+                <p className="text-[11px] uppercase tracking-[0.15em] font-extrabold text-slate-500 mb-4">{group.label}</p>
+                <ul className="space-y-3">
                   {group.links.map((l) => (
                     <li key={l.href}>
-                      <Link href={l.href} className="text-slate-300 font-medium hover:text-orange-400 transition-colors">
+                      <Link href={l.href} className="text-[13px] font-semibold text-slate-400 hover:text-orange-400 transition-colors duration-300">
                         {l.label}
                       </Link>
                     </li>
@@ -94,15 +94,15 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-slate-700/50 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-slate-300 font-medium">
-            © {new Date().getFullYear()} DocFlow. {t.pages.home.copyright}
+        <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-[13px] text-slate-500 font-medium">
+            © {new Date().getFullYear()} DocFlow. All rights reserved.
           </p>
-          <div className="flex items-center gap-5 text-xs text-slate-300 font-medium">
-            <Link href="/about" className="hover:text-orange-400 transition-colors">{t.pages.home.footer.about}</Link>
-            <a href="#" className="hover:text-orange-400 transition-colors">{t.pages.home.footer.privacy}</a>
-            <a href="#" className="hover:text-orange-400 transition-colors">{t.pages.home.footer.faq}</a>
-            <a href="#" className="hover:text-orange-400 transition-colors">{t.pages.home.footer.contact}</a>
+          <div className="flex flex-wrap items-center gap-6 text-[13px] font-semibold text-slate-500">
+            <Link href="/about" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.about}</Link>
+            <Link href="/privacy" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.privacy}</Link>
+            <Link href="/faq" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.faq}</Link>
+            <Link href="/contact" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.contact}</Link>
           </div>
         </div>
       </div>
