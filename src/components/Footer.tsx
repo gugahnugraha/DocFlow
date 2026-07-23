@@ -103,6 +103,7 @@ export default function Footer() {
             <Link href="/privacy" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.privacy}</Link>
             <Link href="/faq" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.faq}</Link>
             <Link href="/contact" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.contact}</Link>
+            <Link href="/donate" className="hover:text-slate-300 transition-colors duration-300">{t.pages.home.footer.donate}</Link>
           </div>
         </div>
       </div>

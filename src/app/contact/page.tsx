@@ -53,7 +53,7 @@ export default function ContactPage() {
             </div>
             <h3 className="font-bold text-slate-900 text-xl mb-2">{language === 'id' ? 'Kantor' : 'Office'}</h3>
             <p className="text-sm text-slate-500">
-              Jakarta Selatan, Indonesia<br/>12930
+              Bandung, West Java<br/>Indonesia
             </p>
           </div>
         </div>

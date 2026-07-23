@@ -271,6 +271,7 @@ export default {
         privacy: "Privacy",
         faq: "FAQ",
         contact: "Contact",
+        donate: "Donate",
       },
       copyright: "Free for everyone.",
     },

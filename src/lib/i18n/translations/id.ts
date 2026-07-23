@@ -271,6 +271,7 @@ export default {
         privacy: "Privasi",
         faq: "FAQ",
         contact: "Kontak",
+        donate: "Donasi",
       },
       copyright: "Gratis untuk semua.",
     },
