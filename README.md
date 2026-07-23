@@ -98,7 +98,7 @@ docflow/
 
 Kami sangat terbuka dengan kontribusi! Silakan buat *pull request* jika Anda ingin menambahkan fitur baru, memperbaiki bug, atau meningkatkan dokumentasi.
 
-## 💖 Dukung Kami (Donate)
+## 💖 Dukung Kami
 
 Jika proyek ini bermanfaat bagi Anda, pertimbangkan untuk memberikan donasi agar kami dapat terus mengembangkan dan merawat DocFlow:
 
