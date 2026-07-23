@@ -105,7 +105,7 @@ Jika proyek ini bermanfaat bagi Anda, pertimbangkan untuk memberikan donasi agar
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/gugahnugraha)
 [![Trakteer](https://img.shields.io/badge/Trakteer-E12A39?style=for-the-badge&logo=trakteer&logoColor=white)](https://trakteer.id/gugahnugraha)
 
-Atau melalui PayPal: **paypal.me/gugahnugraha** (email: gugah.nugraha@example.com)
+Atau melalui PayPal: **paypal.me/gugahnugraha** (email: gugahnugraha8@gmail.com)
 
 ## 📄 Lisensi
 
