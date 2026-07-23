@@ -103,7 +103,7 @@ We are very open to contributions! Please create a *pull request* if you want to
 If this project is useful to you, consider making a donation so we can continue to develop and maintain DocFlow:
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/gugah)
-[![Trakteer](https://img.shields.io/badge/Trakteer-E12A39?style=for-the-badge&logo=trakteer&logoColor=white)](https://trakteer.id/gugahnugraha)
+[![Trakteer](https://img.shields.io/badge/Trakteer-E12A39?style=for-the-badge&logo=trakteer&logoColor=white)](https://trakteer.id/gugah_nugraha)
 
 Or via PayPal: **paypal.me/gugahnugraha** (email: gugahnugraha8@gmail.com)
 
