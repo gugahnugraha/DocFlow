@@ -102,7 +102,7 @@ Kami sangat terbuka dengan kontribusi! Silakan buat *pull request* jika Anda ing
 
 Jika proyek ini bermanfaat bagi Anda, pertimbangkan untuk memberikan donasi agar kami dapat terus mengembangkan dan merawat DocFlow:
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/gugahnugraha)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/gugah)
 [![Trakteer](https://img.shields.io/badge/Trakteer-E12A39?style=for-the-badge&logo=trakteer&logoColor=white)](https://trakteer.id/gugahnugraha)
 
 Atau melalui PayPal: **paypal.me/gugahnugraha** (email: gugahnugraha8@gmail.com)
