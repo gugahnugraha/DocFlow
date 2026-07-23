@@ -45,7 +45,7 @@ Pastikan Anda telah menginstal beberapa dependensi berikut sebelum memulai:
 
 1. Clone repository ini:
    ```bash
-   git clone https://github.com/your-username/docflow.git
+   git clone https://github.com/gugahnugraha/docflow.git
    ```
 2. Pindah ke direktori proyek dan instal dependensi:
    ```bash
