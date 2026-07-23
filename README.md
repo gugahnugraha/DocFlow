@@ -65,6 +65,20 @@ Pastikan Anda telah menginstal beberapa dependensi berikut sebelum memulai:
    ```
 Aplikasi kini berjalan di `http://localhost:3000`.
 
+## 🚀 Panduan Deploy ke Vercel
+
+Proyek ini telah dikonfigurasi agar siap di-deploy ke Vercel dengan mudah.
+
+1. Buat akun di [Vercel](https://vercel.com) jika belum memiliki.
+2. Siapkan database PostgreSQL di layanan cloud (misalnya menggunakan Supabase, Neon, atau Vercel Postgres).
+3. Pada dashboard Vercel, klik **Add New...** > **Project** lalu hubungkan repositori GitHub Anda.
+4. Pada bagian **Environment Variables**, tambahkan konfigurasi berikut:
+   - `DATABASE_URL`: Masukkan string koneksi (URL) database Postgres cloud Anda.
+   - Tambahkan juga variabel lain yang ada di `.env` (seperti konfigurasi otentikasi).
+5. Klik **Deploy**.
+   
+*(Catatan: Script build kami telah otomatis menjalankan `prisma generate && prisma migrate deploy`, jadi tabel database akan langsung terbuat di server produksi Anda.)*
+
 ## 📂 Struktur Proyek
 
 ```
@@ -88,9 +102,10 @@ Kami sangat terbuka dengan kontribusi! Silakan buat *pull request* jika Anda ing
 
 Jika proyek ini bermanfaat bagi Anda, pertimbangkan untuk memberikan donasi agar kami dapat terus mengembangkan dan merawat DocFlow:
 
-[![Donate](https://img.shields.io/badge/Donate-Support_Us-green)](/donate)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/gugahnugraha)
+[![Trakteer](https://img.shields.io/badge/Trakteer-E12A39?style=for-the-badge&logo=trakteer&logoColor=white)](https://trakteer.id/gugahnugraha)
 
-Anda juga dapat langsung mengunjungi halaman [Donasi](/donate) untuk mengetahui opsi dukungan lainnya.
+Atau melalui PayPal: **paypal.me/gugahnugraha** (email: gugah.nugraha@example.com)
 
 ## 📄 Lisensi
 

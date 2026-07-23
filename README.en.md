@@ -65,6 +65,20 @@ Make sure you have installed the following dependencies before starting:
    ```
 The application is now running at `http://localhost:3000`.
 
+## 🚀 Vercel Deployment Guide
+
+This project is configured and ready for a seamless deployment to Vercel.
+
+1. Create a [Vercel](https://vercel.com) account if you don't have one.
+2. Provision a cloud PostgreSQL database (e.g., using Supabase, Neon, or Vercel Postgres).
+3. In your Vercel dashboard, click **Add New...** > **Project** and import your GitHub repository.
+4. In the **Environment Variables** section, add the following configuration:
+   - `DATABASE_URL`: Insert your cloud Postgres connection string.
+   - Any other variables present in your `.env` file (like authentication configs).
+5. Click **Deploy**.
+
+*(Note: The build script is already configured to run `prisma generate && prisma migrate deploy` before building, so your database tables will be automatically created in production.)*
+
 ## 📂 Project Structure
 
 ```
@@ -88,9 +102,10 @@ We are very open to contributions! Please create a *pull request* if you want to
 
 If this project is useful to you, consider making a donation so we can continue to develop and maintain DocFlow:
 
-[![Donate](https://img.shields.io/badge/Donate-Support_Us-green)](/donate)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/gugahnugraha)
+[![Trakteer](https://img.shields.io/badge/Trakteer-E12A39?style=for-the-badge&logo=trakteer&logoColor=white)](https://trakteer.id/gugahnugraha)
 
-You can also directly visit the [Donate](/donate) page to learn about other support options.
+Or via PayPal: **paypal.me/gugahnugraha** (email: gugah.nugraha@example.com)
 
 ## 📄 License
 
